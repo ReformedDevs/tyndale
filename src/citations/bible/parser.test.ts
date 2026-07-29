@@ -76,6 +76,33 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses translation preference commands", () => {
+    expect(parseBracketCitation("[Tyndale translation]")).toEqual({
+      kind: "translation",
+      raw: "[Tyndale translation]",
+      action: "show",
+    });
+    expect(parseBracketCitation("[Tyndale translation asv]")).toEqual({
+      kind: "translation",
+      raw: "[Tyndale translation asv]",
+      action: "set",
+      translation: "asv",
+    });
+    expect(parseBracketCitation("[Tyndale translation reset]")).toEqual({
+      kind: "translation",
+      raw: "[Tyndale translation reset]",
+      action: "reset",
+    });
+  });
+
+  it("returns an error for unknown translation preferences", () => {
+    const result = parseBracketCitation("[Tyndale translation kjv]");
+    expect(result).toMatchObject({
+      kind: "error",
+      message: expect.stringContaining("Unknown translation"),
+    });
+  });
+
   it("ignores bracket text that is not a citation attempt", () => {
     expect(parseBracketCitation("[hello world]")).toEqual({
       kind: "ignored",

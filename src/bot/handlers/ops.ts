@@ -41,11 +41,14 @@ export function formatHelpReply(defaultTranslation: Translation): string {
     "• `[Ps 150]` — whole chapter",
     "• `[Ps 150:5-end]` — verses through chapter end",
     "",
-    `*Translations:* ${translations} (default: ${defaultTranslation.toUpperCase()})`,
+    `*Translations:* ${translations} (bot default: ${defaultTranslation.toUpperCase()})`,
     "",
     "**Bot commands**",
     "• `[Tyndale help]` — this message",
     "• `[Tyndale status]` — uptime and health",
+    "• `[Tyndale translation]` — your default translation",
+    "• `[Tyndale translation asv]` — set your default",
+    "• `[Tyndale translation reset]` — use bot default",
     "",
     "Brackets inside `>` quote lines are ignored. Non-citation brackets like `[hello]` are skipped.",
   ].join("\n");
@@ -66,6 +69,48 @@ export function buildStatusEmbed(
 
 export function buildErrorEmbed(message: string): EmbedBuilder {
   return createTyndaleEmbed(`_${message}_`);
+}
+
+export function buildTranslationShowEmbed(
+  userTranslation: Translation | undefined,
+  botDefault: Translation,
+): EmbedBuilder {
+  if (userTranslation) {
+    return createTyndaleEmbed(
+      [
+        "**Tyndale** · translation",
+        `Your default translation is **${userTranslation.toUpperCase()}**.`,
+        `Bot default: ${botDefault.toUpperCase()}.`,
+      ].join("\n"),
+    );
+  }
+
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · translation",
+      `You're using the bot default: **${botDefault.toUpperCase()}**.`,
+      "Set yours with `[Tyndale translation asv]`.",
+    ].join("\n"),
+  );
+}
+
+export function buildTranslationSetEmbed(translation: Translation): EmbedBuilder {
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · translation",
+      `Got it — **${translation.toUpperCase()}** is now your default translation.`,
+      "I'll use it for your citations unless you specify another one.",
+    ].join("\n"),
+  );
+}
+
+export function buildTranslationResetEmbed(botDefault: Translation): EmbedBuilder {
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · translation",
+      `Cleared your translation preference. Using bot default: **${botDefault.toUpperCase()}**.`,
+    ].join("\n"),
+  );
 }
 
 export function formatStatusReply(client: Client, startedAt: number): string {

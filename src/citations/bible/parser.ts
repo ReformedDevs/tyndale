@@ -14,6 +14,7 @@ const CHAPTER_END_PATTERN = /^(.+?)\s+(\d+):(?:(\d+)-)?end$/i;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
 const HELP_PATTERN = /^tyndale\s+help$/i;
+const TRANSLATION_PATTERN = /^tyndale\s+translation(?:\s+(\S+))?$/i;
 
 function normalizeBookInput(input: string): string {
   return input.toLowerCase().replace(/\./g, "").replace(/\s+/g, "");
@@ -134,6 +135,34 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
 
   if (HELP_PATTERN.test(normalized)) {
     return { kind: "help", raw };
+  }
+
+  const translationMatch = TRANSLATION_PATTERN.exec(normalized);
+  if (translationMatch) {
+    const value = translationMatch[1]?.trim();
+
+    if (!value) {
+      return { kind: "translation", raw, action: "show" };
+    }
+
+    if (value.toLowerCase() === "reset") {
+      return { kind: "translation", raw, action: "reset" };
+    }
+
+    const translation = normalizeTranslation(value);
+    if (!translation) {
+      return errorCitation(
+        raw,
+        `Unknown translation "${value}". Use WEB, ASV, or YLT.`,
+      );
+    }
+
+    return {
+      kind: "translation",
+      raw,
+      action: "set",
+      translation,
+    };
   }
 
   let translation: Translation | undefined;

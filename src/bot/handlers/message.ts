@@ -10,16 +10,22 @@ import {
 import { buildBibleCitationEmbeds, createTyndaleEmbed } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
 import type { VerseLookup } from "../../citations/bible/lookup.js";
+import type { ParsedTranslationCitation } from "../../citations/types.js";
 import type { Config } from "../../config.js";
+import type { UserTranslationStore } from "../../preferences/user-translations.js";
 import {
   buildErrorEmbed,
   buildHelpEmbed,
   buildStatusEmbed,
+  buildTranslationResetEmbed,
+  buildTranslationSetEmbed,
+  buildTranslationShowEmbed,
 } from "./ops.js";
 
 export interface MessageHandlerDeps {
   config: Config;
   lookup: VerseLookup;
+  userTranslations: UserTranslationStore;
   startedAt: number;
 }
 
@@ -93,6 +99,29 @@ async function sendCitationUnit(
   );
 }
 
+async function buildTranslationPreferenceEmbed(
+  message: Message,
+  citation: ParsedTranslationCitation,
+  deps: MessageHandlerDeps,
+): Promise<EmbedBuilder> {
+  const userId = message.author.id;
+  const botDefault = deps.config.DEFAULT_TRANSLATION;
+
+  switch (citation.action) {
+    case "show":
+      return buildTranslationShowEmbed(
+        deps.userTranslations.get(userId),
+        botDefault,
+      );
+    case "set":
+      await deps.userTranslations.set(userId, citation.translation!);
+      return buildTranslationSetEmbed(citation.translation!);
+    case "reset":
+      await deps.userTranslations.clear(userId);
+      return buildTranslationResetEmbed(botDefault);
+  }
+}
+
 export function registerMessageHandler(
   client: Client,
   deps: MessageHandlerDeps,
@@ -116,17 +145,28 @@ async function handleMessage(
     return;
   }
 
+  const defaultTranslation = deps.userTranslations.resolve(
+    message.author.id,
+    deps.config.DEFAULT_TRANSLATION,
+  );
   const units: CitationUnit[] = [];
 
   for (const citation of citations) {
     switch (citation.kind) {
       case "help":
         units.push({
-          embeds: [buildHelpEmbed(deps.config.DEFAULT_TRANSLATION)],
+          embeds: [buildHelpEmbed(defaultTranslation)],
         });
         break;
       case "status":
         units.push({ embeds: [buildStatusEmbed(client, deps.startedAt)] });
+        break;
+      case "translation":
+        units.push({
+          embeds: [
+            await buildTranslationPreferenceEmbed(message, citation, deps),
+          ],
+        });
         break;
       case "error":
         units.push({ embeds: [buildErrorEmbed(citation.message)] });
@@ -135,7 +175,7 @@ async function handleMessage(
         const result = buildBibleCitationEmbeds(
           citation,
           deps.lookup,
-          deps.config.DEFAULT_TRANSLATION,
+          defaultTranslation,
         );
 
         if ("error" in result) {
