@@ -69,7 +69,26 @@ describe("parseBracketCitation", () => {
     });
   });
 
-  it("returns an error for unknown books", () => {
+  it("ignores bracket text that is not a citation attempt", () => {
+    expect(parseBracketCitation("[hello world]")).toEqual({
+      kind: "ignored",
+      raw: "[hello world]",
+    });
+    expect(parseBracketCitation("[see note]")).toEqual({
+      kind: "ignored",
+      raw: "[see note]",
+    });
+  });
+
+  it("returns an error for malformed chapter:verse syntax", () => {
+    const result = parseBracketCitation("[Gen 1:3-10:]");
+    expect(result).toMatchObject({
+      kind: "error",
+      message: expect.stringContaining("Invalid citation format"),
+    });
+  });
+
+  it("returns an error for unknown books with chapter:verse", () => {
     const result = parseBracketCitation("[Foo 1:1]");
     expect(result).toMatchObject({
       kind: "error",
@@ -87,6 +106,19 @@ describe("parseBracketCitation", () => {
 });
 
 describe("findBracketCitations", () => {
+  it("skips non-citation brackets when scanning a message", () => {
+    const results = findBracketCitations(
+      "See [hello world] and [Gen 1:1] for context.",
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ kind: "bible", book: "gen" });
+  });
+
+  it("returns nothing when all brackets are non-citations", () => {
+    expect(findBracketCitations("Just [a note] here.")).toEqual([]);
+  });
+
   it("finds multiple citations in one message", () => {
     const results = findBracketCitations(
       "See [Gen 1:1] and [John 3:16] for context.",

@@ -3,9 +3,11 @@ import { isTranslation, type Translation } from "./lookup.js";
 import type {
   ParsedCitation,
   ParsedCitationError,
+  ParsedIgnoredCitation,
 } from "../types.js";
 
 const BRACKET_PATTERN = /\[([^\]]+)\]/g;
+const CITATION_ATTEMPT_PATTERN = /^(.+?)\s+\d+:/;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
 
@@ -46,8 +48,13 @@ export function getBookName(slug: BookSlug): string {
 
 function expandVerseSpec(spec: string): number[] {
   const verses: number[] = [];
+  const normalized = spec.trim();
 
-  for (const part of spec.split(",")) {
+  if (!/^[\d,\-\s]+$/.test(normalized)) {
+    throw new Error(`Invalid verse specification: ${spec}`);
+  }
+
+  for (const part of normalized.split(",")) {
     const trimmed = part.trim();
     if (!trimmed) {
       continue;
@@ -78,10 +85,14 @@ function expandVerseSpec(spec: string): number[] {
   return verses;
 }
 
+function ignoredCitation(raw: string): ParsedIgnoredCitation {
+  return { kind: "ignored", raw };
+}
+
 function parseBracketContent(raw: string, inner: string): ParsedCitation {
   const content = inner.trim();
   if (!content) {
-    return errorCitation(raw, "Empty bracket citation");
+    return ignoredCitation(raw);
   }
 
   if (STATUS_PATTERN.test(content)) {
@@ -100,9 +111,17 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     }
   }
 
+  if (!CITATION_ATTEMPT_PATTERN.test(remainder)) {
+    return ignoredCitation(raw);
+  }
+
+  if (!LOCATION_PATTERN.test(remainder)) {
+    return errorCitation(raw, `Invalid citation format in ${raw}`);
+  }
+
   const locationMatch = LOCATION_PATTERN.exec(remainder);
   if (!locationMatch) {
-    return errorCitation(raw, `Could not parse citation location in ${raw}`);
+    return errorCitation(raw, `Invalid citation format in ${raw}`);
   }
 
   const [, bookPart, chapterText, verseSpec] = locationMatch;
@@ -163,7 +182,12 @@ export function findBracketCitations(text: string): ParsedCitation[] {
       continue;
     }
 
-    citations.push(parseBracketContent(match[0], inner));
+    const citation = parseBracketContent(match[0], inner);
+    if (citation.kind === "ignored") {
+      continue;
+    }
+
+    citations.push(citation);
   }
 
   return citations;

@@ -24,7 +24,13 @@ export interface ParsedCitationError {
   message: string;
 }
 
+export interface ParsedIgnoredCitation {
+  kind: "ignored";
+  raw: string;
+}
+
 export type ParsedCitation =
   | ParsedBibleCitation
   | ParsedStatusCitation
-  | ParsedCitationError;
+  | ParsedCitationError
+  | ParsedIgnoredCitation;
