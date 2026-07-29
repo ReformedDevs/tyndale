@@ -141,7 +141,7 @@ export function getCitationThreadName(
   return `${label} · ${translationLabel}`.slice(0, 100);
 }
 
-function createCitationEmbed(
+export function createTyndaleEmbed(
   description: string,
   footer?: string,
 ): EmbedBuilder {
@@ -188,7 +188,7 @@ export function buildBibleCitationEmbeds(
       batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
       batch.length > 0
     ) {
-      embeds.push(createCitationEmbed(batch.join(" ")));
+      embeds.push(createTyndaleEmbed(batch.join(" ")));
       batch = [line];
       batchLength = line.length;
       continue;
@@ -199,7 +199,7 @@ export function buildBibleCitationEmbeds(
   }
 
   if (batch.length > 0) {
-    embeds.push(createCitationEmbed(batch.join(" "), footer));
+    embeds.push(createTyndaleEmbed(batch.join(" "), footer));
   } else if (embeds.length > 0) {
     embeds.at(-1)?.setFooter({ text: footer });
   }

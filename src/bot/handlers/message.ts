@@ -7,15 +7,15 @@ import {
   type SendableChannels,
 } from "discord.js";
 
-import {
-  buildBibleCitationEmbeds,
-  resolveBibleCitation,
-  splitDiscordMessages,
-} from "../../citations/bible/format.js";
+import { buildBibleCitationEmbeds, createTyndaleEmbed } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
 import type { VerseLookup } from "../../citations/bible/lookup.js";
 import type { Config } from "../../config.js";
-import { formatHelpReply, formatStatusReply } from "./ops.js";
+import {
+  buildErrorEmbed,
+  buildHelpEmbed,
+  buildStatusEmbed,
+} from "./ops.js";
 
 export interface MessageHandlerDeps {
   config: Config;
@@ -23,14 +23,15 @@ export interface MessageHandlerDeps {
   startedAt: number;
 }
 
-type CitationUnit =
-  | { kind: "text"; content: string; threadName?: string }
-  | { kind: "embeds"; embeds: EmbedBuilder[]; threadName: string };
+type CitationUnit = {
+  embeds: EmbedBuilder[];
+  threadName?: string;
+};
 
 /** Reply with connector UI but without @mentioning / highlighting the author. */
 async function replyWithoutPing(
   message: Message,
-  options: { content?: string; embeds?: EmbedBuilder[] },
+  options: { embeds: EmbedBuilder[] },
 ): Promise<Message> {
   return message.reply({
     ...options,
@@ -70,28 +71,6 @@ async function sendCitationUnit(
   message: Message,
   unit: CitationUnit,
 ): Promise<void> {
-  if (unit.kind === "text") {
-    const chunks = splitDiscordMessages(unit.content);
-    const firstMessage = await replyWithoutPing(message, {
-      content: chunks[0]!,
-    });
-
-    if (chunks.length === 1) {
-      return;
-    }
-
-    await continueInThread(
-      firstMessage,
-      unit.threadName ?? "Citation continued",
-      async (target) => {
-        for (const chunk of chunks.slice(1)) {
-          await target.send({ content: chunk });
-        }
-      },
-    );
-    return;
-  }
-
   const [firstEmbed, ...remainingEmbeds] = unit.embeds;
   if (!firstEmbed) {
     return;
@@ -105,9 +84,13 @@ async function sendCitationUnit(
     return;
   }
 
-  await continueInThread(firstMessage, unit.threadName, async (target) => {
-    await sendEmbedsSequentially(target, remainingEmbeds);
-  });
+  await continueInThread(
+    firstMessage,
+    unit.threadName ?? "Citation continued",
+    async (target) => {
+      await sendEmbedsSequentially(target, remainingEmbeds);
+    },
+  );
 }
 
 export function registerMessageHandler(
@@ -133,54 +116,39 @@ async function handleMessage(
     return;
   }
 
-  const useEmbeds = deps.config.REPLY_FORMAT === "embed";
   const units: CitationUnit[] = [];
 
   for (const citation of citations) {
     switch (citation.kind) {
       case "help":
         units.push({
-          kind: "text",
-          content: formatHelpReply(deps.config.DEFAULT_TRANSLATION),
+          embeds: [buildHelpEmbed(deps.config.DEFAULT_TRANSLATION)],
         });
         break;
       case "status":
-        units.push({ kind: "text", content: formatStatusReply(client, deps.startedAt) });
+        units.push({ embeds: [buildStatusEmbed(client, deps.startedAt)] });
         break;
       case "error":
-        units.push({ kind: "text", content: `_${citation.message}_` });
+        units.push({ embeds: [buildErrorEmbed(citation.message)] });
         break;
-      case "bible":
-        if (useEmbeds) {
-          const result = buildBibleCitationEmbeds(
-            citation,
-            deps.lookup,
-            deps.config.DEFAULT_TRANSLATION,
-          );
+      case "bible": {
+        const result = buildBibleCitationEmbeds(
+          citation,
+          deps.lookup,
+          deps.config.DEFAULT_TRANSLATION,
+        );
 
-          if ("error" in result) {
-            units.push({ kind: "text", content: result.error });
-            break;
-          }
-
-          units.push({
-            kind: "embeds",
-            embeds: result.embeds,
-            threadName: result.threadName,
-          });
+        if ("error" in result) {
+          units.push({ embeds: [createTyndaleEmbed(result.error)] });
           break;
         }
 
         units.push({
-          kind: "text",
-          content: resolveBibleCitation(
-            citation,
-            deps.lookup,
-            deps.config.DEFAULT_TRANSLATION,
-          ),
-          threadName: `${citation.bookName} ${citation.chapter} · ${(citation.translation ?? deps.config.DEFAULT_TRANSLATION).toUpperCase()}`,
+          embeds: result.embeds,
+          threadName: result.threadName,
         });
         break;
+      }
     }
   }
 

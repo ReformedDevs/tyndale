@@ -1,5 +1,6 @@
-import type { Client } from "discord.js";
+import type { Client, EmbedBuilder } from "discord.js";
 
+import { createTyndaleEmbed } from "../../citations/bible/format.js";
 import {
   TRANSLATIONS,
   type Translation,
@@ -48,6 +49,23 @@ export function formatHelpReply(defaultTranslation: Translation): string {
     "",
     "Brackets inside `>` quote lines are ignored. Non-citation brackets like `[hello]` are skipped.",
   ].join("\n");
+}
+
+export function buildHelpEmbed(
+  defaultTranslation: Translation,
+): EmbedBuilder {
+  return createTyndaleEmbed(formatHelpReply(defaultTranslation));
+}
+
+export function buildStatusEmbed(
+  client: Client,
+  startedAt: number,
+): EmbedBuilder {
+  return createTyndaleEmbed(formatStatusReply(client, startedAt));
+}
+
+export function buildErrorEmbed(message: string): EmbedBuilder {
+  return createTyndaleEmbed(`_${message}_`);
 }
 
 export function formatStatusReply(client: Client, startedAt: number): string {

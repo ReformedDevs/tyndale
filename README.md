@@ -45,7 +45,7 @@ npm run dev
 
 ## Usage
 
-Post a bracket citation in any channel the bot can read:
+Post a bracket citation in any channel the bot can read. Tyndale replies with an embed containing the verse text.
 
 | Syntax | Example |
 |--------|---------|

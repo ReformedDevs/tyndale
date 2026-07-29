@@ -25,7 +25,7 @@ export function createBotClient(config: Config): Client {
     });
 
     console.info(
-      `Logged in as ${client.user?.tag} (default translation: ${config.DEFAULT_TRANSLATION}, reply format: ${config.REPLY_FORMAT})`,
+      `Logged in as ${client.user?.tag} (default translation: ${config.DEFAULT_TRANSLATION})`,
     );
   });
 
