@@ -69,6 +69,13 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses help pings", () => {
+    expect(parseBracketCitation("[Tyndale help]")).toEqual({
+      kind: "help",
+      raw: "[Tyndale help]",
+    });
+  });
+
   it("ignores bracket text that is not a citation attempt", () => {
     expect(parseBracketCitation("[hello world]")).toEqual({
       kind: "ignored",
@@ -133,6 +140,31 @@ describe("parseBracketCitation", () => {
     expect(result).toMatchObject({
       kind: "error",
       message: expect.stringContaining("Invalid verse range"),
+    });
+  });
+
+  it("parses citations case-insensitively", () => {
+    expect(parseBracketCitation("[gen 1:1]")).toMatchObject({
+      kind: "bible",
+      book: "gen",
+      verses: [1],
+    });
+    expect(parseBracketCitation("[GENESIS 1:1]")).toMatchObject({
+      kind: "bible",
+      book: "gen",
+    });
+    expect(parseBracketCitation("[asv gen 1:1]")).toMatchObject({
+      kind: "bible",
+      translation: "asv",
+      book: "gen",
+    });
+    expect(parseBracketCitation("[PS 150:5-END]")).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapterEndFrom: 5,
+    });
+    expect(parseBracketCitation("[TYNDALE HELP]")).toMatchObject({
+      kind: "help",
     });
   });
 });

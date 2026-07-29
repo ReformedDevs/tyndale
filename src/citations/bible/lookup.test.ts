@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { VerseLookup } from "./lookup.js";
+import { VerseLookup, isTranslation, normalizeTranslation } from "./lookup.js";
 
 const sampleIndexes = {
   web: {
@@ -52,5 +52,14 @@ describe("VerseLookup", () => {
   it("expands verses through the end of a chapter", () => {
     expect(lookup.expandVerses("web", "gen", 1, [], 1)).toEqual([1, 2]);
     expect(lookup.expandVerses("web", "gen", 1, [], 2)).toEqual([2]);
+  });
+});
+
+describe("isTranslation", () => {
+  it("accepts translation codes case-insensitively", () => {
+    expect(isTranslation("WEB")).toBe(true);
+    expect(isTranslation("Asv")).toBe(true);
+    expect(normalizeTranslation("YLT")).toBe("ylt");
+    expect(isTranslation("kjv")).toBe(false);
   });
 });

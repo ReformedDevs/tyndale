@@ -15,7 +15,7 @@ import {
 import { findBracketCitations } from "../../citations/bible/parser.js";
 import type { VerseLookup } from "../../citations/bible/lookup.js";
 import type { Config } from "../../config.js";
-import { formatStatusReply } from "./ops.js";
+import { formatHelpReply, formatStatusReply } from "./ops.js";
 
 export interface MessageHandlerDeps {
   config: Config;
@@ -138,6 +138,12 @@ async function handleMessage(
 
   for (const citation of citations) {
     switch (citation.kind) {
+      case "help":
+        units.push({
+          kind: "text",
+          content: formatHelpReply(deps.config.DEFAULT_TRANSLATION),
+        });
+        break;
       case "status":
         units.push({ kind: "text", content: formatStatusReply(client, deps.startedAt) });
         break;

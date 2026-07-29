@@ -1,5 +1,5 @@
 import { BOOKS, type BookSlug } from "./books.js";
-import { isTranslation, type Translation } from "./lookup.js";
+import { normalizeTranslation, type Translation } from "./lookup.js";
 import type {
   ParsedCitation,
   ParsedCitationError,
@@ -13,6 +13,7 @@ const CHAPTER_ONLY_PATTERN = /^(.+?)\s+(\d+)$/;
 const CHAPTER_END_PATTERN = /^(.+?)\s+(\d+):(?:(\d+)-)?end$/i;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
+const HELP_PATTERN = /^tyndale\s+help$/i;
 
 function normalizeBookInput(input: string): string {
   return input.toLowerCase().replace(/\./g, "").replace(/\s+/g, "");
@@ -38,10 +39,7 @@ export function resolveBookInput(input: string): BookSlug | undefined {
     return undefined;
   }
 
-  return (
-    bookInputToSlug.get(normalizeBookInput(trimmed)) ??
-    bookInputToSlug.get(trimmed.toLowerCase())
-  );
+  return bookInputToSlug.get(normalizeBookInput(trimmed));
 }
 
 export function getBookName(slug: BookSlug): string {
@@ -128,8 +126,14 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     return ignoredCitation(raw);
   }
 
-  if (STATUS_PATTERN.test(content)) {
+  const normalized = content.toLowerCase();
+
+  if (STATUS_PATTERN.test(normalized)) {
     return { kind: "status", raw };
+  }
+
+  if (HELP_PATTERN.test(normalized)) {
+    return { kind: "help", raw };
   }
 
   let translation: Translation | undefined;
@@ -137,9 +141,9 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
 
   const firstSpace = content.indexOf(" ");
   if (firstSpace !== -1) {
-    const maybeTranslation = content.slice(0, firstSpace).toLowerCase();
-    if (isTranslation(maybeTranslation)) {
-      translation = maybeTranslation;
+    const maybeTranslation = content.slice(0, firstSpace);
+    translation = normalizeTranslation(maybeTranslation);
+    if (translation) {
       remainder = content.slice(firstSpace + 1).trim();
     }
   }

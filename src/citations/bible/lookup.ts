@@ -7,7 +7,12 @@ export const TRANSLATIONS = ["web", "asv", "ylt"] as const;
 export type Translation = (typeof TRANSLATIONS)[number];
 
 export function isTranslation(value: string): value is Translation {
-  return (TRANSLATIONS as readonly string[]).includes(value);
+  return (TRANSLATIONS as readonly string[]).includes(value.toLowerCase());
+}
+
+export function normalizeTranslation(value: string): Translation | undefined {
+  const normalized = value.toLowerCase();
+  return isTranslation(normalized) ? normalized : undefined;
 }
 
 export type VerseIndex = Record<string, string>;

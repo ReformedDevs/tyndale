@@ -54,9 +54,11 @@ Post a bracket citation in any channel the bot can read:
 | Multiple verses | `[Gen 1:1,3,5]` |
 | Full book name | `[Genesis 1:1]` |
 | Translation prefix | `[ASV Gen 1:1]`, `[YLT John 3:16]` |
+| Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
+| Bot help | `[Tyndale help]` |
 | Bot status | `[Tyndale status]` |
 
-The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). It replies with an error only when a bracket looks like a broken reference (e.g. `[Gen 1:3-10:]`, unknown book).
+The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). It replies with an error only when a bracket looks like a broken reference (e.g. `[Gen 1:3-10:]`, unknown book).
 
 ## Scripts
 
@@ -83,4 +85,5 @@ Tyndale uses public-domain Bible texts:
 There is no HTTP server. Check whether the bot is running via:
 
 - Online/offline status in the Discord member list
+- `[Tyndale help]` for citation syntax and bot commands
 - `[Tyndale status]` in any server (uptime, gateway latency, loaded translations)

@@ -1,6 +1,9 @@
 import type { Client } from "discord.js";
 
-import { TRANSLATIONS } from "../../citations/bible/lookup.js";
+import {
+  TRANSLATIONS,
+  type Translation,
+} from "../../citations/bible/lookup.js";
 
 function formatUptime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
@@ -17,6 +20,34 @@ function formatUptime(ms: number): string {
   }
 
   return `${seconds}s`;
+}
+
+export function formatHelpReply(defaultTranslation: Translation): string {
+  const translations = TRANSLATIONS.map((translation) =>
+    translation.toUpperCase(),
+  ).join(", ");
+
+  return [
+    "**Tyndale** · help",
+    "Post a bracket citation in any message and Tyndale will reply with the verse text. Book names, abbreviations, and translation codes are case-insensitive.",
+    "",
+    "**Examples**",
+    "• `[Gen 1:1]` — single verse",
+    "• `[Gen 1:1-3]` — verse range",
+    "• `[Gen 1:1,3,5]` — multiple verses",
+    "• `[Genesis 1:1]` — full book name",
+    "• `[ASV Gen 1:1]` — translation prefix",
+    "• `[Ps 150]` — whole chapter",
+    "• `[Ps 150:5-end]` — verses through chapter end",
+    "",
+    `*Translations:* ${translations} (default: ${defaultTranslation.toUpperCase()})`,
+    "",
+    "**Bot commands**",
+    "• `[Tyndale help]` — this message",
+    "• `[Tyndale status]` — uptime and health",
+    "",
+    "Brackets inside `>` quote lines are ignored. Non-citation brackets like `[hello]` are skipped.",
+  ].join("\n");
 }
 
 export function formatStatusReply(client: Client, startedAt: number): string {

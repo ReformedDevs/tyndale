@@ -20,6 +20,11 @@ export interface ParsedStatusCitation {
   raw: string;
 }
 
+export interface ParsedHelpCitation {
+  kind: "help";
+  raw: string;
+}
+
 export interface ParsedCitationError {
   kind: "error";
   raw: string;
@@ -34,5 +39,6 @@ export interface ParsedIgnoredCitation {
 export type ParsedCitation =
   | ParsedBibleCitation
   | ParsedStatusCitation
+  | ParsedHelpCitation
   | ParsedCitationError
   | ParsedIgnoredCitation;
