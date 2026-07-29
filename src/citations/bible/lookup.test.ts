@@ -43,4 +43,14 @@ describe("VerseLookup", () => {
     expect(lookup.hasTranslation("web")).toBe(true);
     expect(lookup.hasTranslation("kjv")).toBe(false);
   });
+
+  it("returns chapter verse counts", () => {
+    expect(lookup.getChapterVerseCount("web", "gen", 1)).toBe(2);
+    expect(lookup.getChapterVerseCount("web", "gen", 99)).toBeUndefined();
+  });
+
+  it("expands verses through the end of a chapter", () => {
+    expect(lookup.expandVerses("web", "gen", 1, [], 1)).toEqual([1, 2]);
+    expect(lookup.expandVerses("web", "gen", 1, [], 2)).toEqual([2]);
+  });
 });

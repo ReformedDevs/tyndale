@@ -3,11 +3,14 @@ import { isTranslation, type Translation } from "./lookup.js";
 import type {
   ParsedCitation,
   ParsedCitationError,
+  ParsedBibleCitation,
   ParsedIgnoredCitation,
 } from "../types.js";
 
 const BRACKET_PATTERN = /\[([^\]]+)\]/g;
-const CITATION_ATTEMPT_PATTERN = /^(.+?)\s+\d+:/;
+const CITATION_ATTEMPT_PATTERN = /^(.+?)\s+\d+(?::|$)/;
+const CHAPTER_ONLY_PATTERN = /^(.+?)\s+(\d+)$/;
+const CHAPTER_END_PATTERN = /^(.+?)\s+(\d+):(?:(\d+)-)?end$/i;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
 
@@ -89,6 +92,36 @@ function ignoredCitation(raw: string): ParsedIgnoredCitation {
   return { kind: "ignored", raw };
 }
 
+function parseBookChapter(
+  raw: string,
+  bookPart: string,
+  chapterText: string,
+  translation?: Translation,
+): ParsedCitation | ParsedBibleCitation {
+  const book = resolveBookInput(bookPart.trim());
+  if (!book) {
+    return errorCitation(
+      raw,
+      `Could not parse book "${bookPart.trim()}" in ${raw}`,
+    );
+  }
+
+  const chapter = Number.parseInt(chapterText, 10);
+  if (Number.isNaN(chapter)) {
+    return errorCitation(raw, `Invalid chapter in ${raw}`);
+  }
+
+  return {
+    kind: "bible",
+    raw,
+    translation,
+    book,
+    bookName: getBookName(book),
+    chapter,
+    verses: [],
+  };
+}
+
 function parseBracketContent(raw: string, inner: string): ParsedCitation {
   const content = inner.trim();
   if (!content) {
@@ -115,6 +148,45 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     return ignoredCitation(raw);
   }
 
+  const chapterOnlyMatch = CHAPTER_ONLY_PATTERN.exec(remainder);
+  if (chapterOnlyMatch) {
+    const [, bookPart, chapterText] = chapterOnlyMatch;
+    const parsed = parseBookChapter(
+      raw,
+      bookPart ?? "",
+      chapterText ?? "",
+      translation,
+    );
+    if (parsed.kind !== "bible") {
+      return parsed;
+    }
+
+    return { ...parsed, chapterEndFrom: 1 };
+  }
+
+  const chapterEndMatch = CHAPTER_END_PATTERN.exec(remainder);
+  if (chapterEndMatch) {
+    const [, bookPart, chapterText, fromVerseText] = chapterEndMatch;
+    const parsed = parseBookChapter(
+      raw,
+      bookPart ?? "",
+      chapterText ?? "",
+      translation,
+    );
+    if (parsed.kind !== "bible") {
+      return parsed;
+    }
+
+    const fromVerse = fromVerseText
+      ? Number.parseInt(fromVerseText, 10)
+      : 1;
+    if (Number.isNaN(fromVerse) || fromVerse < 1) {
+      return errorCitation(raw, `Invalid citation format in ${raw}`);
+    }
+
+    return { ...parsed, chapterEndFrom: fromVerse };
+  }
+
   if (!LOCATION_PATTERN.test(remainder)) {
     return errorCitation(raw, `Invalid citation format in ${raw}`);
   }
@@ -125,17 +197,14 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
   }
 
   const [, bookPart, chapterText, verseSpec] = locationMatch;
-  const book = resolveBookInput(bookPart ?? "");
-  if (!book) {
-    return errorCitation(
-      raw,
-      `Could not parse book "${bookPart?.trim() ?? ""}" in ${raw}`,
-    );
-  }
-
-  const chapter = Number.parseInt(chapterText ?? "", 10);
-  if (Number.isNaN(chapter)) {
-    return errorCitation(raw, `Invalid chapter in ${raw}`);
+  const parsed = parseBookChapter(
+    raw,
+    bookPart ?? "",
+    chapterText ?? "",
+    translation,
+  );
+  if (parsed.kind !== "bible") {
+    return parsed;
   }
 
   let verses: number[];
@@ -151,15 +220,7 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     return errorCitation(raw, `No verses specified in ${raw}`);
   }
 
-  return {
-    kind: "bible",
-    raw,
-    translation,
-    book,
-    bookName: getBookName(book),
-    chapter,
-    verses,
-  };
+  return { ...parsed, verses };
 }
 
 function errorCitation(raw: string, message: string): ParsedCitationError {
@@ -173,10 +234,19 @@ export function parseBracketCitation(raw: string): ParsedCitation {
   return parseBracketContent(raw, inner);
 }
 
+/** Remove markdown quote lines so bracket refs inside block quotes are not scanned. */
+export function stripQuoteBlockLines(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => !line.trimStart().startsWith(">"))
+    .join("\n");
+}
+
 export function findBracketCitations(text: string): ParsedCitation[] {
   const citations: ParsedCitation[] = [];
+  const scannable = stripQuoteBlockLines(text);
 
-  for (const match of text.matchAll(BRACKET_PATTERN)) {
+  for (const match of scannable.matchAll(BRACKET_PATTERN)) {
     const inner = match[1];
     if (inner === undefined) {
       continue;

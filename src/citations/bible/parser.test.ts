@@ -80,6 +80,38 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses a whole chapter reference", () => {
+    const result = parseBracketCitation("[Ps 150]");
+    expect(result).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapter: 150,
+      verses: [],
+      chapterEndFrom: 1,
+    });
+  });
+
+  it("parses chapter references through end", () => {
+    expect(parseBracketCitation("[Ps 150:1-end]")).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapter: 150,
+      chapterEndFrom: 1,
+    });
+    expect(parseBracketCitation("[Ps 150:5-end]")).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapter: 150,
+      chapterEndFrom: 5,
+    });
+    expect(parseBracketCitation("[Ps 150:end]")).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapter: 150,
+      chapterEndFrom: 1,
+    });
+  });
+
   it("returns an error for malformed chapter:verse syntax", () => {
     const result = parseBracketCitation("[Gen 1:3-10:]");
     expect(result).toMatchObject({
@@ -132,5 +164,18 @@ describe("findBracketCitations", () => {
   it("ignores text outside brackets", () => {
     const results = findBracketCitations("No citations here.");
     expect(results).toEqual([]);
+  });
+
+  it("ignores bracket refs inside markdown quote blocks", () => {
+    const results = findBracketCitations(
+      "See [Gen 1:1] in this line.\n> Quoted [John 3:16] here.\n> > Nested [Ps 23:1] too.",
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ kind: "bible", book: "gen" });
+  });
+
+  it("ignores citations when the entire message is a quote block", () => {
+    expect(findBracketCitations("> [Gen 1:1]")).toEqual([]);
   });
 });

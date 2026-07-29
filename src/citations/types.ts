@@ -11,6 +11,8 @@ export interface ParsedBibleCitation {
   bookName: string;
   chapter: number;
   verses: number[];
+  /** When set, verses are expanded from this number through the chapter end at lookup time. */
+  chapterEndFrom?: number;
 }
 
 export interface ParsedStatusCitation {
