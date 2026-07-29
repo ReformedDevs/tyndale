@@ -7,10 +7,13 @@ import {
   type SendableChannels,
 } from "discord.js";
 
-import { buildBibleCitationEmbeds, createTyndaleEmbed } from "../../citations/bible/format.js";
+import { buildBibleCitationEmbedsForMany } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
-import type { VerseLookup } from "../../citations/bible/lookup.js";
-import type { ParsedTranslationCitation } from "../../citations/types.js";
+import type { VerseLookup, Translation } from "../../citations/bible/lookup.js";
+import type {
+  ParsedBibleCitation,
+  ParsedTranslationCitation,
+} from "../../citations/types.js";
 import type { Config } from "../../config.js";
 import type { UserTranslationStore } from "../../preferences/user-translations.js";
 import {
@@ -122,6 +125,32 @@ async function buildTranslationPreferenceEmbed(
   }
 }
 
+function appendBibleCitationUnit(
+  units: CitationUnit[],
+  bibleCitations: ParsedBibleCitation[],
+  lookup: VerseLookup,
+  defaultTranslation: Translation,
+): void {
+  if (bibleCitations.length === 0) {
+    return;
+  }
+
+  const result = buildBibleCitationEmbedsForMany(
+    bibleCitations,
+    lookup,
+    defaultTranslation,
+  );
+
+  if (result.embeds.length === 0) {
+    return;
+  }
+
+  units.push({
+    embeds: result.embeds,
+    threadName: result.threadName,
+  });
+}
+
 export function registerMessageHandler(
   client: Client,
   deps: MessageHandlerDeps,
@@ -150,47 +179,52 @@ async function handleMessage(
     deps.config.DEFAULT_TRANSLATION,
   );
   const units: CitationUnit[] = [];
+  let pendingBibleCitations: ParsedBibleCitation[] = [];
 
   for (const citation of citations) {
     switch (citation.kind) {
-      case "help":
-        units.push({
-          embeds: [buildHelpEmbed(defaultTranslation)],
-        });
+      case "bible":
+        pendingBibleCitations.push(citation);
         break;
-      case "status":
-        units.push({ embeds: [buildStatusEmbed(client, deps.startedAt)] });
-        break;
-      case "translation":
-        units.push({
-          embeds: [
-            await buildTranslationPreferenceEmbed(message, citation, deps),
-          ],
-        });
-        break;
-      case "error":
-        units.push({ embeds: [buildErrorEmbed(citation.message)] });
-        break;
-      case "bible": {
-        const result = buildBibleCitationEmbeds(
-          citation,
+      default:
+        appendBibleCitationUnit(
+          units,
+          pendingBibleCitations,
           deps.lookup,
           defaultTranslation,
         );
+        pendingBibleCitations = [];
 
-        if ("error" in result) {
-          units.push({ embeds: [createTyndaleEmbed(result.error)] });
-          break;
+        switch (citation.kind) {
+          case "help":
+            units.push({
+              embeds: [buildHelpEmbed(defaultTranslation)],
+            });
+            break;
+          case "status":
+            units.push({ embeds: [buildStatusEmbed(client, deps.startedAt)] });
+            break;
+          case "translation":
+            units.push({
+              embeds: [
+                await buildTranslationPreferenceEmbed(message, citation, deps),
+              ],
+            });
+            break;
+          case "error":
+            units.push({ embeds: [buildErrorEmbed(citation.message)] });
+            break;
         }
-
-        units.push({
-          embeds: result.embeds,
-          threadName: result.threadName,
-        });
         break;
-      }
     }
   }
+
+  appendBibleCitationUnit(
+    units,
+    pendingBibleCitations,
+    deps.lookup,
+    defaultTranslation,
+  );
 
   try {
     for (const unit of units) {

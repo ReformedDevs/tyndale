@@ -161,6 +161,129 @@ export interface BibleCitationEmbedResult {
   threadName: string;
 }
 
+function buildEmbedsFromDescriptionParts(parts: string[]): EmbedBuilder[] {
+  const embeds: EmbedBuilder[] = [];
+  let batch: string[] = [];
+  let batchLength = 0;
+
+  for (const part of parts) {
+    const addition = batch.length === 0 ? part.length : part.length + 2;
+
+    if (
+      batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
+      batch.length > 0
+    ) {
+      embeds.push(createTyndaleEmbed(batch.join("\n\n")));
+      batch = [part];
+      batchLength = part.length;
+      continue;
+    }
+
+    batch.push(part);
+    batchLength += addition;
+  }
+
+  if (batch.length > 0) {
+    embeds.push(createTyndaleEmbed(batch.join("\n\n")));
+  }
+
+  return embeds;
+}
+
+function getCombinedThreadName(blocks: BibleCitationContent[]): string {
+  if (blocks.length === 0) {
+    return "Citations";
+  }
+
+  if (blocks.length === 1) {
+    const block = blocks[0]!;
+    return getCitationThreadName(block.label, block.translationLabel);
+  }
+
+  const sharedTranslation = blocks.every(
+    (block) => block.translationLabel === blocks[0]!.translationLabel,
+  )
+    ? blocks[0]!.translationLabel
+    : undefined;
+
+  const labels = blocks.map((block) => block.label).join(" · ");
+  if (labels.length <= 100) {
+    return sharedTranslation ? `${labels} · ${sharedTranslation}` : labels;
+  }
+
+  return sharedTranslation
+    ? `${blocks.length} citations · ${sharedTranslation}`
+    : `${blocks.length} citations`;
+}
+
+export function buildBibleCitationEmbedsForMany(
+  citations: ParsedBibleCitation[],
+  lookup: VerseLookup,
+  defaultTranslation: Translation,
+): BibleCitationEmbedResult {
+  if (citations.length === 0) {
+    return { embeds: [], threadName: "Citations" };
+  }
+
+  if (citations.length === 1) {
+    const result = buildBibleCitationEmbeds(
+      citations[0]!,
+      lookup,
+      defaultTranslation,
+    );
+
+    if ("error" in result) {
+      return {
+        embeds: [createTyndaleEmbed(result.error)],
+        threadName: "Citation",
+      };
+    }
+
+    return result;
+  }
+
+  const blocks: BibleCitationContent[] = [];
+  const errorLines: string[] = [];
+
+  for (const citation of citations) {
+    const content = resolveBibleCitationContent(
+      citation,
+      lookup,
+      defaultTranslation,
+    );
+
+    if ("error" in content) {
+      errorLines.push(content.error);
+      continue;
+    }
+
+    blocks.push(content);
+  }
+
+  if (blocks.length === 0) {
+    return {
+      embeds: [createTyndaleEmbed(errorLines.join("\n\n"))],
+      threadName: "Citations",
+    };
+  }
+
+  const parts: string[] = [...errorLines];
+
+  for (const block of blocks) {
+    if (parts.length > 0) {
+      parts.push("---");
+    }
+
+    parts.push(block.verseLines.join(" "));
+    parts.push(formatCitationFooter(block.label, block.translationLabel));
+  }
+
+  return {
+    embeds: buildEmbedsFromDescriptionParts(parts),
+    threadName: getCombinedThreadName(blocks),
+  };
+}
+
 export function buildBibleCitationEmbeds(
   citation: ParsedBibleCitation,
   lookup: VerseLookup,

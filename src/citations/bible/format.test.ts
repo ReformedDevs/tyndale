@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildBibleCitationEmbed,
   buildBibleCitationEmbeds,
+  buildBibleCitationEmbedsForMany,
   formatCitationFooter,
   formatReferenceLabel,
   resolveBibleCitation,
@@ -122,6 +123,76 @@ describe("resolveBibleCitation", () => {
     expect(result).toContain("**1.** Praise Yah!");
     expect(result).toContain("**3.** Praise him!");
     expect(result).toContain("*Psalms 150:1-3 · WEB*");
+  });
+});
+
+const johnCitation = {
+  kind: "bible" as const,
+  raw: "[John 3:16]",
+  book: "john" as const,
+  bookName: "John",
+  chapter: 3,
+  verses: [16],
+};
+
+describe("buildBibleCitationEmbedsForMany", () => {
+  it("collates multiple citations into one embed", () => {
+    const lookup = VerseLookup.fromIndexes({
+      web: {
+        "gen.1.1":
+          "In the beginning, God created the heavens and the earth.",
+        "john.3.16": "For God so loved the world.",
+      },
+      asv: {},
+      ylt: {},
+    });
+
+    const result = buildBibleCitationEmbedsForMany(
+      [
+        {
+          kind: "bible",
+          raw: "[Gen 1:1]",
+          book: "gen",
+          bookName: "Genesis",
+          chapter: 1,
+          verses: [1],
+        },
+        johnCitation,
+      ],
+      lookup,
+      "web",
+    );
+
+    expect(result.embeds).toHaveLength(1);
+    expect(result.embeds[0]?.data.description).toContain(
+      "In the beginning, God created the heavens and the earth.",
+    );
+    expect(result.embeds[0]?.data.description).toContain(
+      "For God so loved the world.",
+    );
+    expect(result.embeds[0]?.data.description).toContain("*Genesis 1:1 · WEB*");
+    expect(result.embeds[0]?.data.description).toContain("*John 3:16 · WEB*");
+    expect(result.threadName).toBe("Genesis 1:1 · John 3:16 · WEB");
+  });
+
+  it("delegates a single citation to the existing embed builder", () => {
+    const result = buildBibleCitationEmbedsForMany(
+      [
+        {
+          kind: "bible",
+          raw: "[Gen 1:1]",
+          book: "gen",
+          bookName: "Genesis",
+          chapter: 1,
+          verses: [1],
+        },
+      ],
+      sampleLookup,
+      "web",
+    );
+
+    expect(result.embeds).toHaveLength(1);
+    expect(result.embeds[0]?.data.footer?.text).toBe("Genesis 1:1 · WEB");
   });
 });
 
