@@ -26,8 +26,8 @@ export function formatStatusReply(client: Client, startedAt: number): string {
   ).join(", ");
 
   return [
-    "**Tyndale** — online",
-    `Uptime: ${uptime} | Gateway: ${client.ws.ping}ms`,
-    `Translations: ${translations}`,
+    "**Tyndale** · online",
+    `*Uptime:* ${uptime}  ·  *Gateway:* ${client.ws.ping}ms`,
+    `*Translations:* ${translations}`,
   ].join("\n");
 }
