@@ -41,7 +41,7 @@ npm run dev
 4. Turn **Public Bot** on if you want others to add Tyndale via an invite link.
 5. Generate an invite URL under **OAuth2 → URL Generator**:
    - **Scopes:** `bot`
-   - **Permissions:** View Channels, Send Messages, Read Message History
+   - **Permissions:** View Channels, Send Messages, Read Message History, Create Public Threads, Send Messages in Threads
 
 ## Usage
 

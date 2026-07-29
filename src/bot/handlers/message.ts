@@ -1,6 +1,14 @@
-import { Events, type Client, type Message } from "discord.js";
+import {
+  EmbedBuilder,
+  Events,
+  ThreadAutoArchiveDuration,
+  type Client,
+  type Message,
+  type SendableChannels,
+} from "discord.js";
 
 import {
+  buildBibleCitationEmbeds,
   resolveBibleCitation,
   splitDiscordMessages,
 } from "../../citations/bible/format.js";
@@ -15,25 +23,91 @@ export interface MessageHandlerDeps {
   startedAt: number;
 }
 
-async function sendReply(message: Message, chunks: string[]): Promise<void> {
-  if (chunks.length === 0) {
+type CitationUnit =
+  | { kind: "text"; content: string; threadName?: string }
+  | { kind: "embeds"; embeds: EmbedBuilder[]; threadName: string };
+
+/** Reply with connector UI but without @mentioning / highlighting the author. */
+async function replyWithoutPing(
+  message: Message,
+  options: { content?: string; embeds?: EmbedBuilder[] },
+): Promise<Message> {
+  return message.reply({
+    ...options,
+    allowedMentions: { repliedUser: false },
+  });
+}
+
+async function sendEmbedsSequentially(
+  target: SendableChannels,
+  embeds: EmbedBuilder[],
+): Promise<void> {
+  // Discord allows 6000 total embed characters per message — send one embed each.
+  for (const embed of embeds) {
+    await target.send({ embeds: [embed] });
+  }
+}
+
+async function continueInThread(
+  anchor: Message,
+  threadName: string,
+  sendRemaining: (target: SendableChannels) => Promise<void>,
+): Promise<void> {
+  if (!anchor.guild) {
+    await sendRemaining(anchor.channel as SendableChannels);
     return;
   }
 
-  await message.reply(chunks[0]!);
+  const thread = await anchor.startThread({
+    name: threadName.slice(0, 100),
+    autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
+  });
 
-  if (chunks.length === 1) {
+  await sendRemaining(thread);
+}
+
+async function sendCitationUnit(
+  message: Message,
+  unit: CitationUnit,
+): Promise<void> {
+  if (unit.kind === "text") {
+    const chunks = splitDiscordMessages(unit.content);
+    const firstMessage = await replyWithoutPing(message, {
+      content: chunks[0]!,
+    });
+
+    if (chunks.length === 1) {
+      return;
+    }
+
+    await continueInThread(
+      firstMessage,
+      unit.threadName ?? "Citation continued",
+      async (target) => {
+        for (const chunk of chunks.slice(1)) {
+          await target.send({ content: chunk });
+        }
+      },
+    );
     return;
   }
 
-  const channel = message.channel;
-  if (!channel.isSendable()) {
+  const [firstEmbed, ...remainingEmbeds] = unit.embeds;
+  if (!firstEmbed) {
     return;
   }
 
-  for (const chunk of chunks.slice(1)) {
-    await channel.send(chunk);
+  const firstMessage = await replyWithoutPing(message, {
+    embeds: [firstEmbed],
+  });
+
+  if (remainingEmbeds.length === 0) {
+    return;
   }
+
+  await continueInThread(firstMessage, unit.threadName, async (target) => {
+    await sendEmbedsSequentially(target, remainingEmbeds);
+  });
 }
 
 export function registerMessageHandler(
@@ -59,33 +133,55 @@ async function handleMessage(
     return;
   }
 
-  const parts: string[] = [];
+  const useEmbeds = deps.config.REPLY_FORMAT === "embed";
+  const units: CitationUnit[] = [];
 
   for (const citation of citations) {
     switch (citation.kind) {
       case "status":
-        parts.push(formatStatusReply(client, deps.startedAt));
+        units.push({ kind: "text", content: formatStatusReply(client, deps.startedAt) });
         break;
       case "error":
-        parts.push(citation.message);
+        units.push({ kind: "text", content: `_${citation.message}_` });
         break;
       case "bible":
-        parts.push(
-          resolveBibleCitation(
+        if (useEmbeds) {
+          const result = buildBibleCitationEmbeds(
+            citation,
+            deps.lookup,
+            deps.config.DEFAULT_TRANSLATION,
+          );
+
+          if ("error" in result) {
+            units.push({ kind: "text", content: result.error });
+            break;
+          }
+
+          units.push({
+            kind: "embeds",
+            embeds: result.embeds,
+            threadName: result.threadName,
+          });
+          break;
+        }
+
+        units.push({
+          kind: "text",
+          content: resolveBibleCitation(
             citation,
             deps.lookup,
             deps.config.DEFAULT_TRANSLATION,
           ),
-        );
+          threadName: `${citation.bookName} ${citation.chapter} · ${(citation.translation ?? deps.config.DEFAULT_TRANSLATION).toUpperCase()}`,
+        });
         break;
     }
   }
 
-  const reply = parts.join("\n\n");
-  const chunks = splitDiscordMessages(reply);
-
   try {
-    await sendReply(message, chunks);
+    for (const unit of units) {
+      await sendCitationUnit(message, unit);
+    }
   } catch (error) {
     console.error("Failed to send citation reply:", error);
   }
