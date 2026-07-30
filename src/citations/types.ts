@@ -10,6 +10,22 @@ export interface ConfessionLocation {
   paragraph: number;
 }
 
+export interface ParsedConfessionDiffCitation {
+  kind: "confessionDiff";
+  raw: string;
+  left: Confession;
+  right: Confession;
+  locations: ConfessionLocation[];
+  wholeChapter?: number;
+  chapterEndFrom?: ConfessionLocation;
+  range?: {
+    startChapter: number;
+    startParagraph: number;
+    endChapter: number;
+    endParagraph: number;
+  };
+}
+
 export interface ParsedConfessionCitation {
   kind: "confession";
   raw: string;
@@ -82,6 +98,7 @@ export interface ParsedIgnoredCitation {
 export type ParsedCitation =
   | ParsedBibleCitation
   | ParsedConfessionCitation
+  | ParsedConfessionDiffCitation
   | ParsedStatusCitation
   | ParsedServerStatusCitation
   | ParsedHelpCitation

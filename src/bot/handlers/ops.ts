@@ -73,6 +73,7 @@ export function formatHelpReply(
     "• `[WCF 1.1]` — Westminster Confession paragraph",
     "• `[WCF 1]`, `[WCF 1.end]`, `[WCF 1.2-end]` — whole chapter or through chapter end",
     "• `[LBCF 26.2]` — 1689 London Baptist Confession paragraph",
+    "• `[WCF vs LBCF 26.2]` — side-by-side diff image (WCF left, LBCF right)",
     "• `[Tyndale format]` — your text layout",
     "• `[Tyndale format verse]` — one verse per line",
     "• `[Tyndale format literary]` — USFM poetry lines and prose paragraphs",

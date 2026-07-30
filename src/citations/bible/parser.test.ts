@@ -144,6 +144,26 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses WCF vs LBCF diff citations", () => {
+    expect(parseBracketCitation("[WCF vs LBCF 1.1]")).toEqual({
+      kind: "confessionDiff",
+      raw: "[WCF vs LBCF 1.1]",
+      left: "wcf",
+      right: "lbcf",
+      locations: [{ chapter: 1, paragraph: 1 }],
+    });
+    expect(parseBracketCitation("[lbcf vs wcf 26.2]")).toEqual({
+      kind: "confessionDiff",
+      raw: "[lbcf vs wcf 26.2]",
+      left: "lbcf",
+      right: "wcf",
+      locations: [{ chapter: 26, paragraph: 2 }],
+    });
+    expect(parseBracketCitation("[WCF vs WCF 1.1]")).toMatchObject({
+      kind: "error",
+    });
+  });
+
   it("ignores legacy translation preference brackets", () => {
     expect(parseBracketCitation("[Tyndale translation]")).toEqual({
       kind: "ignored",

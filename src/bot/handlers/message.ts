@@ -1,4 +1,5 @@
 import {
+  AttachmentBuilder,
   EmbedBuilder,
   Events,
   ThreadAutoArchiveDuration,
@@ -10,6 +11,7 @@ import {
 import { buildBibleCitationEmbedsForMany } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
 import { buildConfessionCitationEmbeds } from "../../citations/confessions/format.js";
+import { buildConfessionDiffEmbeds, confessionDiffAttachments } from "../../citations/confessions/diff-format.js";
 import type { ConfessionLookup } from "../../citations/confessions/lookup.js";
 import type { VerseLookup, Translation } from "../../citations/bible/lookup.js";
 import type { PoetryLayoutLookup } from "../../citations/bible/poetry-layout.js";
@@ -17,6 +19,7 @@ import type { TextFormat } from "../../citations/bible/text-format.js";
 import type {
   ParsedBibleCitation,
   ParsedConfessionCitation,
+  ParsedConfessionDiffCitation,
   ParsedFormatCitation,
   ParsedServerFormatCitation,
 } from "../../citations/types.js";
@@ -59,12 +62,13 @@ export interface MessageHandlerDeps {
 type CitationUnit = {
   embeds: EmbedBuilder[];
   threadName?: string;
+  files?: AttachmentBuilder[];
 };
 
 /** Reply with connector UI but without @mentioning / highlighting the author. */
 async function replyWithoutPing(
   message: Message,
-  options: { embeds: EmbedBuilder[] },
+  options: { embeds: EmbedBuilder[]; files?: AttachmentBuilder[] },
 ): Promise<Message> {
   return message.reply({
     ...options,
@@ -104,8 +108,10 @@ async function sendCitationUnit(
     return;
   }
 
+  const files = unit.files ?? [];
+
   if (unit.embeds.length === 1) {
-    await replyWithoutPing(message, { embeds: [unit.embeds[0]!] });
+    await replyWithoutPing(message, { embeds: [unit.embeds[0]!], files });
     return;
   }
 
@@ -113,13 +119,19 @@ async function sendCitationUnit(
 
   if (inExistingThread || !message.guild) {
     const [firstEmbed, ...remainingEmbeds] = unit.embeds;
-    await replyWithoutPing(message, { embeds: [firstEmbed!] });
+    const [firstFile, ...remainingFiles] = files;
+    await replyWithoutPing(message, {
+      embeds: [firstEmbed!],
+      files: firstFile ? [firstFile] : [],
+    });
 
-    if (remainingEmbeds.length > 0) {
-      await sendEmbedsSequentially(
-        message.channel as SendableChannels,
-        remainingEmbeds,
-      );
+    for (let index = 0; index < remainingEmbeds.length; index += 1) {
+      const embed = remainingEmbeds[index]!;
+      const file = remainingFiles[index];
+      await (message.channel as SendableChannels).send({
+        embeds: [embed],
+        ...(file ? { files: [file] } : {}),
+      });
     }
 
     return;
@@ -129,7 +141,15 @@ async function sendCitationUnit(
     message,
     unit.threadName ?? "Citation continued",
   );
-  await sendEmbedsSequentially(thread, unit.embeds);
+
+  for (let index = 0; index < unit.embeds.length; index += 1) {
+    const embed = unit.embeds[index]!;
+    const file = files[index];
+    await thread.send({
+      embeds: [embed],
+      ...(file ? { files: [file] } : {}),
+    });
+  }
 }
 
 function getGuildFormat(
@@ -278,6 +298,25 @@ async function appendBibleCitationUnit(
   });
 }
 
+async function appendConfessionDiffCitationUnit(
+  units: CitationUnit[],
+  citation: ParsedConfessionDiffCitation,
+  confessionLookup: ConfessionLookup,
+): Promise<void> {
+  const result = await buildConfessionDiffEmbeds(citation, confessionLookup);
+
+  if ("error" in result) {
+    units.push({ embeds: [buildErrorEmbed(result.error)] });
+    return;
+  }
+
+  units.push({
+    embeds: result.embeds,
+    files: confessionDiffAttachments(result.files),
+    threadName: result.threadName,
+  });
+}
+
 function appendConfessionCitationUnit(
   units: CitationUnit[],
   citation: ParsedConfessionCitation,
@@ -348,6 +387,13 @@ async function handleMessage(
         pendingBibleCitations = [];
 
         switch (citation.kind) {
+          case "confessionDiff":
+            await appendConfessionDiffCitationUnit(
+              units,
+              citation,
+              deps.confessionLookup,
+            );
+            break;
           case "confession":
             appendConfessionCitationUnit(
               units,

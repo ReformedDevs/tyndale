@@ -1,4 +1,8 @@
-import type { ParsedCitation, ParsedConfessionCitation } from "../types.js";
+import type {
+  ParsedCitation,
+  ParsedConfessionCitation,
+  ParsedConfessionDiffCitation,
+} from "../types.js";
 import {
   formatConfessionCodes,
   normalizeConfession,
@@ -7,32 +11,30 @@ import {
 } from "./lookup.js";
 
 const CONFESSION_PREFIX_PATTERN = /^(wcf|lbcf)\s+(.+)$/i;
+const CONFESSION_DIFF_PATTERN = /^(wcf|lbcf)\s+vs\.?\s+(wcf|lbcf)\s+(.+)$/i;
 
 function errorCitation(raw: string, message: string): ParsedCitation {
   return { kind: "error", raw, message };
 }
 
-function parseLocationPart(
-  raw: string,
-  confession: Confession,
-  locationPart: string,
-): ParsedCitation {
+function parseLocationFields(locationPart: string):
+  | {
+      locations: ParsedConfessionCitation["locations"];
+      wholeChapter?: number;
+      chapterEndFrom?: ParsedConfessionCitation["chapterEndFrom"];
+      range?: ParsedConfessionCitation["range"];
+    }
+  | { error: string } {
   const normalized = locationPart.trim();
 
   const wholeChapterMatch = /^(\d+)$/.exec(normalized);
   if (wholeChapterMatch) {
     const chapter = Number.parseInt(wholeChapterMatch[1] ?? "", 10);
     if (Number.isNaN(chapter)) {
-      return errorCitation(raw, `Invalid citation format in ${raw}`);
+      return { error: "Invalid chapter number." };
     }
 
-    return {
-      kind: "confession",
-      raw,
-      confession,
-      locations: [],
-      wholeChapter: chapter,
-    };
+    return { locations: [], wholeChapter: chapter };
   }
 
   const chapterEndMatch = /^(\d+)\.(?:(\d+)-)?end$/i.exec(normalized);
@@ -43,13 +45,10 @@ function parseLocationPart(
       : 1;
 
     if (Number.isNaN(chapter) || Number.isNaN(paragraph)) {
-      return errorCitation(raw, `Invalid citation format in ${raw}`);
+      return { error: "Invalid chapter end reference." };
     }
 
     return {
-      kind: "confession",
-      raw,
-      confession,
       locations: [],
       chapterEndFrom: { chapter, paragraph },
     };
@@ -60,15 +59,10 @@ function parseLocationPart(
     const chapter = Number.parseInt(singleMatch[1] ?? "", 10);
     const paragraph = Number.parseInt(singleMatch[2] ?? "", 10);
     if (Number.isNaN(chapter) || Number.isNaN(paragraph)) {
-      return errorCitation(raw, `Invalid citation format in ${raw}`);
+      return { error: "Invalid paragraph reference." };
     }
 
-    return {
-      kind: "confession",
-      raw,
-      confession,
-      locations: [{ chapter, paragraph }],
-    };
+    return { locations: [{ chapter, paragraph }] };
   }
 
   const rangeMatch = /^(\d+)\.(\d+)-(\d+)(?:\.(\d+))?$/.exec(normalized);
@@ -89,13 +83,10 @@ function parseLocationPart(
       Number.isNaN(endChapter) ||
       Number.isNaN(endParagraph)
     ) {
-      return errorCitation(raw, `Invalid citation format in ${raw}`);
+      return { error: "Invalid paragraph range." };
     }
 
     return {
-      kind: "confession",
-      raw,
-      confession,
       locations: [],
       range: {
         startChapter,
@@ -106,10 +97,78 @@ function parseLocationPart(
     };
   }
 
-  return errorCitation(
+  return { error: "Invalid citation format." };
+}
+
+function parseLocationPart(
+  raw: string,
+  confession: Confession,
+  locationPart: string,
+): ParsedCitation {
+  const parsed = parseLocationFields(locationPart);
+  if ("error" in parsed) {
+    return errorCitation(
+      raw,
+      `${parsed.error} Use ${confession.toUpperCase()} 1, ${confession.toUpperCase()} 1.1, or ${confession.toUpperCase()} 1.1-3.`,
+    );
+  }
+
+  return {
+    kind: "confession",
     raw,
-    `Invalid citation format in ${raw}. Use ${confession.toUpperCase()} 1, ${confession.toUpperCase()} 1.1, or ${confession.toUpperCase()} 1.1-3.`,
-  );
+    confession,
+    locations: parsed.locations,
+    wholeChapter: parsed.wholeChapter,
+    chapterEndFrom: parsed.chapterEndFrom,
+    range: parsed.range,
+  };
+}
+
+export function parseConfessionDiffBracket(
+  raw: string,
+  content: string,
+): ParsedCitation | undefined {
+  const match = CONFESSION_DIFF_PATTERN.exec(content.trim());
+  if (!match) {
+    return undefined;
+  }
+
+  const left = normalizeConfession(match[1] ?? "");
+  const right = normalizeConfession(match[2] ?? "");
+  if (!left || !right) {
+    return errorCitation(
+      raw,
+      `Unknown confession in ${raw}. Use WCF and LBCF only.`,
+    );
+  }
+
+  if (left === right) {
+    return errorCitation(
+      raw,
+      `Compare WCF and LBCF, not ${left.toUpperCase()} and ${right.toUpperCase()}.`,
+    );
+  }
+
+  const parsed = parseLocationFields(match[3] ?? "");
+  if ("error" in parsed) {
+    return errorCitation(
+      raw,
+      `${parsed.error} Use WCF vs LBCF 1.1, WCF vs LBCF 1, or WCF vs LBCF 1.1-3.`,
+    );
+  }
+
+  const diffCitation: ParsedConfessionDiffCitation = {
+    kind: "confessionDiff",
+    raw,
+    left,
+    right,
+    locations: parsed.locations,
+    wholeChapter: parsed.wholeChapter,
+    chapterEndFrom: parsed.chapterEndFrom,
+    range: parsed.range,
+  };
+
+  return diffCitation;
 }
 
 export function parseConfessionBracket(
