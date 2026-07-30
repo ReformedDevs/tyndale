@@ -9,6 +9,7 @@ import {
   joinVerseLines,
   resolveVerseLayout,
   type TextFormat,
+  type VerseLayout,
 } from "./text-format.js";
 
 const DISCORD_MESSAGE_LIMIT = 1900;
@@ -211,6 +212,157 @@ export interface BibleCitationEmbedResult {
   threadName: string;
 }
 
+const VERSE_START_LINE = /^\*\*\d+(?:\.)?\*\*/;
+
+function splitParagraphLineIntoVerseSegments(line: string): string[] {
+  const matches = [...line.matchAll(/\*\*(\d+)(?:\.)?\*\*/g)];
+
+  if (matches.length <= 1) {
+    return [line];
+  }
+
+  return matches.map((match, index) => {
+    const start = match.index!;
+    const end =
+      index + 1 < matches.length ? matches[index + 1]!.index! : line.length;
+    return line.slice(start, end).trim();
+  });
+}
+
+/** Groups formatted display lines so embed batching never splits mid-verse. */
+export function groupDisplayLinesIntoVerseSegments(
+  lines: string[],
+  layout: VerseLayout,
+): string[] {
+  if (layout === "paragraph") {
+    const segments: string[] = [];
+
+    for (const line of lines) {
+      if (line === "") {
+        continue;
+      }
+
+      segments.push(...splitParagraphLineIntoVerseSegments(line));
+    }
+
+    return segments;
+  }
+
+  const segments: string[] = [];
+  let current: string[] = [];
+
+  for (const line of lines) {
+    if (line === "") {
+      if (current.length > 0) {
+        segments.push(current.join("\n"));
+        current = [];
+      }
+
+      segments.push("");
+      continue;
+    }
+
+    if (VERSE_START_LINE.test(line) && current.length > 0) {
+      segments.push(current.join("\n"));
+      current = [line];
+    } else {
+      current.push(line);
+    }
+  }
+
+  if (current.length > 0) {
+    segments.push(current.join("\n"));
+  }
+
+  return segments;
+}
+
+function batchLinesIntoEmbeds(lines: string[], lineSeparator: string): EmbedBuilder[] {
+  const embeds: EmbedBuilder[] = [];
+  let batch: string[] = [];
+  let batchLength = 0;
+
+  for (const line of lines) {
+    const addition =
+      batch.length === 0 ? line.length : line.length + lineSeparator.length;
+
+    if (
+      batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
+      batch.length > 0
+    ) {
+      embeds.push(createTyndaleEmbed(batch.join(lineSeparator)));
+      batch = [line];
+      batchLength = line.length;
+      continue;
+    }
+
+    batch.push(line);
+    batchLength += addition;
+  }
+
+  if (batch.length > 0) {
+    embeds.push(createTyndaleEmbed(batch.join(lineSeparator)));
+  }
+
+  return embeds;
+}
+
+function buildEmbedsFromVerseSegments(
+  segments: string[],
+  verseLayout: VerseLayout,
+  footer?: string,
+): EmbedBuilder[] {
+  const segmentSeparator = verseLayout === "paragraph" ? " " : "\n";
+  const embeds: EmbedBuilder[] = [];
+  let batch: string[] = [];
+  let batchLength = 0;
+
+  for (const segment of segments) {
+    if (segment === "" && batch.length === 0) {
+      continue;
+    }
+
+    if (segment.length > DISCORD_EMBED_DESCRIPTION_BUFFER) {
+      if (batch.length > 0) {
+        embeds.push(createTyndaleEmbed(batch.join(segmentSeparator)));
+        batch = [];
+        batchLength = 0;
+      }
+
+      embeds.push(
+        ...batchLinesIntoEmbeds(segment.split("\n"), "\n"),
+      );
+      continue;
+    }
+
+    const addition =
+      batch.length === 0
+        ? segment.length
+        : segment.length + segmentSeparator.length;
+
+    if (
+      batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
+      batch.length > 0
+    ) {
+      embeds.push(createTyndaleEmbed(batch.join(segmentSeparator)));
+      batch = [segment];
+      batchLength = segment.length;
+      continue;
+    }
+
+    batch.push(segment);
+    batchLength += addition;
+  }
+
+  if (batch.length > 0) {
+    embeds.push(createTyndaleEmbed(batch.join(segmentSeparator), footer));
+  } else if (footer && embeds.length > 0) {
+    embeds.at(-1)?.setFooter({ text: footer });
+  }
+
+  return embeds;
+}
+
 function buildEmbedsFromDescriptionParts(parts: string[]): EmbedBuilder[] {
   const embeds: EmbedBuilder[] = [];
   let batch: string[] = [];
@@ -360,34 +512,15 @@ export function buildBibleCitationEmbeds(
   }
 
   const footer = `${content.label} · ${content.translationLabel}`;
-  const embeds: EmbedBuilder[] = [];
-  let batch: string[] = [];
-  let batchLength = 0;
-  const lineSeparator = content.verseLayout === "paragraph" ? " " : "\n";
-
-  for (const line of content.verseLines) {
-    const addition =
-      batch.length === 0 ? line.length : line.length + lineSeparator.length;
-
-    if (
-      batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
-      batch.length > 0
-    ) {
-      embeds.push(createTyndaleEmbed(batch.join(lineSeparator)));
-      batch = [line];
-      batchLength = line.length;
-      continue;
-    }
-
-    batch.push(line);
-    batchLength += addition;
-  }
-
-  if (batch.length > 0) {
-    embeds.push(createTyndaleEmbed(batch.join(lineSeparator), footer));
-  } else if (embeds.length > 0) {
-    embeds.at(-1)?.setFooter({ text: footer });
-  }
+  const segments = groupDisplayLinesIntoVerseSegments(
+    content.verseLines,
+    content.verseLayout,
+  );
+  const embeds = buildEmbedsFromVerseSegments(
+    segments,
+    content.verseLayout,
+    footer,
+  );
 
   return {
     embeds,

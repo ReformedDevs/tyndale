@@ -6,6 +6,7 @@ import {
   buildBibleCitationEmbedsForMany,
   formatCitationFooter,
   formatReferenceLabel,
+  groupDisplayLinesIntoVerseSegments,
   resolveBibleCitation,
   splitDiscordMessages,
 } from "./format.js";
@@ -526,6 +527,37 @@ describe("buildBibleCitationEmbed", () => {
   });
 });
 
+describe("groupDisplayLinesIntoVerseSegments", () => {
+  it("keeps multi-line poetry verses together", () => {
+    const segments = groupDisplayLinesIntoVerseSegments(
+      [
+        "**1** Blessed are those whose ways are blameless",
+        "\u2003\u2003who walk according to the law of the LORD.",
+        "**2** Blessed are those who keep his statutes",
+        "\u2003\u2003and seek him with all their heart.",
+      ],
+      "usfm",
+    );
+
+    expect(segments).toEqual([
+      "**1** Blessed are those whose ways are blameless\n\u2003\u2003who walk according to the law of the LORD.",
+      "**2** Blessed are those who keep his statutes\n\u2003\u2003and seek him with all their heart.",
+    ]);
+  });
+
+  it("splits combined paragraph lines into individual verses", () => {
+    const segments = groupDisplayLinesIntoVerseSegments(
+      ["**1.** In the beginning. **2.** The earth was empty."],
+      "paragraph",
+    );
+
+    expect(segments).toEqual([
+      "**1.** In the beginning.",
+      "**2.** The earth was empty.",
+    ]);
+  });
+});
+
 describe("buildBibleCitationEmbeds", () => {
   it("splits long chapters across multiple embeds", () => {
     const webIndex: Record<string, string> = {};
@@ -558,6 +590,64 @@ describe("buildBibleCitationEmbeds", () => {
     expect(result.embeds.at(-1)?.data.footer?.text).toBe("Psalms 119:1-50 · WEB");
     for (const embed of result.embeds) {
       expect((embed.data.description?.length ?? 0)).toBeLessThanOrEqual(4096);
+    }
+  });
+
+  it("splits long poetry chapters at verse boundaries, not mid-verse", () => {
+    const webIndex: Record<string, string> = {};
+    const poetryIndex: Record<string, { lines: { indent: 1 | 2; text: string }[] }> =
+      {};
+
+    for (let verse = 1; verse <= 50; verse += 1) {
+      const key = `ps.119.${verse}`;
+      webIndex[key] = "fallback";
+      poetryIndex[key] = {
+        lines: [
+          {
+            indent: 1,
+            text: `Blessed are those whose ways are blameless, verse ${verse}. `.repeat(
+              4,
+            ),
+          },
+          {
+            indent: 2,
+            text: `They also walk according to the law of the LORD, verse ${verse}. `.repeat(
+              4,
+            ),
+          },
+        ],
+      };
+    }
+
+    const lookup = VerseLookup.fromIndexes({ web: webIndex, asv: {}, ylt: {} });
+    const poetryLayout = PoetryLayoutLookup.fromIndex(poetryIndex);
+    const result = buildBibleCitationEmbeds(
+      {
+        kind: "bible",
+        raw: "[Ps 119]",
+        book: "ps",
+        bookName: "Psalms",
+        chapter: 119,
+        verses: [],
+        chapterEndFrom: 1,
+      },
+      lookup,
+      "web",
+      "literary",
+      poetryLayout,
+    );
+
+    expect("error" in result).toBe(false);
+    if ("error" in result) {
+      return;
+    }
+
+    expect(result.embeds.length).toBeGreaterThan(1);
+
+    const continuationLine = /^\u2003/;
+    for (const embed of result.embeds) {
+      const firstLine = embed.data.description?.split("\n").find((line) => line.length > 0);
+      expect(firstLine && continuationLine.test(firstLine)).toBe(false);
     }
   });
 });
