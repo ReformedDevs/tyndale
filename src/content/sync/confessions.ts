@@ -4,6 +4,10 @@ import path from "node:path";
 import type { ConfessionDocument } from "../../citations/confessions/lookup.js";
 import type { ConfessionRegistryEntry } from "../registry.js";
 import type { ContentPaths } from "../../paths.js";
+import {
+  fetchCcelConfessionDocument,
+  parseCcelConfessionSource,
+} from "./ccel-confessions.js";
 
 interface CreedSection {
   Section: string;
@@ -29,7 +33,7 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-function buildConfessionDocument(
+function buildConfessionDocumentFromCreedsJson(
   entry: ConfessionRegistryEntry,
   source: CreedDocument,
 ): ConfessionDocument {
@@ -64,15 +68,36 @@ function buildConfessionDocument(
   };
 }
 
+async function buildConfessionDocument(
+  entry: ConfessionRegistryEntry,
+): Promise<ConfessionDocument> {
+  const ccelSource = parseCcelConfessionSource(entry.source);
+  if (!("error" in ccelSource)) {
+    return fetchCcelConfessionDocument(
+      ccelSource.kind,
+      entry.abbrev,
+      entry.name,
+    );
+  }
+
+  if (!entry.source.startsWith("http")) {
+    throw new Error(
+      `Unsupported confession source for ${entry.id}: ${entry.source}`,
+    );
+  }
+
+  const source = await fetchJson<CreedDocument>(entry.source);
+  return buildConfessionDocumentFromCreedsJson(entry, source);
+}
+
 export async function syncConfession(
   entry: ConfessionRegistryEntry,
   paths: ContentPaths,
 ): Promise<void> {
   await mkdir(paths.confessions, { recursive: true });
 
-  console.info(`Fetching ${entry.abbrev}...`);
-  const source = await fetchJson<CreedDocument>(entry.source);
-  const document = buildConfessionDocument(entry, source);
+  console.info(`Fetching ${entry.abbrev} from ${entry.source}...`);
+  const document = await buildConfessionDocument(entry);
   const outputPath = path.join(paths.confessions, `${entry.id}.json`);
   await writeFile(outputPath, `${JSON.stringify(document, null, 2)}\n`, "utf8");
   console.info(
