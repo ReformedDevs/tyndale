@@ -8,5 +8,7 @@ data/*.json
 data/user-translations.json
 data/guild-translations.json
 data/guild-analytics.json
+data/guild-devotionals.json
+data/spurgeon-morn-eve.json
 *.log
 .DS_Store
