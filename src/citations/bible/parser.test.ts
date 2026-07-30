@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   findBracketCitations,
   parseBracketCitation,
+  parseScriptureReference,
 } from "./parser.js";
 
 describe("parseBracketCitation", () => {
@@ -298,6 +299,36 @@ describe("parseBracketCitation", () => {
     expect(parseBracketCitation("[TYNDALE HELP]")).toMatchObject({
       kind: "help",
     });
+  });
+});
+
+describe("parseScriptureReference", () => {
+  it("parses plain scripture references from devotional headings", () => {
+    expect(parseScriptureReference("Joshua 5:12")).toMatchObject({
+      kind: "bible",
+      book: "josh",
+      chapter: 5,
+      verses: [12],
+    });
+  });
+
+  it("parses numbered books and comma-separated verses", () => {
+    expect(parseScriptureReference("1 John 3:1,2")).toMatchObject({
+      kind: "bible",
+      book: "1john",
+      chapter: 3,
+      verses: [1, 2],
+    });
+    expect(parseScriptureReference("Psalm 100:2")).toMatchObject({
+      kind: "bible",
+      book: "ps",
+      chapter: 100,
+      verses: [2],
+    });
+  });
+
+  it("returns undefined for invalid references", () => {
+    expect(parseScriptureReference("Not a reference")).toBeUndefined();
   });
 });
 

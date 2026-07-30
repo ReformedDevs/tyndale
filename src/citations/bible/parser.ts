@@ -301,6 +301,39 @@ function errorCitation(raw: string, message: string): ParsedCitationError {
   return { kind: "error", raw, message };
 }
 
+export function parseScriptureReference(
+  reference: string,
+): ParsedBibleCitation | undefined {
+  const trimmed = reference.trim();
+  const match = LOCATION_PATTERN.exec(trimmed);
+  if (!match) {
+    return undefined;
+  }
+
+  const [, bookPart, chapterText, verseSpec] = match;
+  const parsed = parseBookChapter(
+    `[${trimmed}]`,
+    bookPart ?? "",
+    chapterText ?? "",
+  );
+  if (parsed.kind !== "bible") {
+    return undefined;
+  }
+
+  let verses: number[];
+  try {
+    verses = expandVerseSpec(verseSpec ?? "");
+  } catch {
+    return undefined;
+  }
+
+  if (verses.length === 0) {
+    return undefined;
+  }
+
+  return { ...parsed, verses };
+}
+
 export function parseBracketCitation(raw: string): ParsedCitation {
   const inner = raw.startsWith("[") && raw.endsWith("]")
     ? raw.slice(1, -1)
