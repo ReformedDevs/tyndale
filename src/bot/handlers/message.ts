@@ -82,48 +82,54 @@ async function sendEmbedsSequentially(
   }
 }
 
-async function continueInThread(
-  anchor: Message,
+async function startCitationThread(
+  message: Message,
   threadName: string,
-  sendRemaining: (target: SendableChannels) => Promise<void>,
-): Promise<void> {
-  if (!anchor.guild) {
-    await sendRemaining(anchor.channel as SendableChannels);
-    return;
+): Promise<SendableChannels> {
+  if (!message.guild) {
+    return message.channel as SendableChannels;
   }
 
-  const thread = await anchor.startThread({
+  return message.startThread({
     name: threadName.slice(0, 100),
     autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
   });
-
-  await sendRemaining(thread);
 }
 
 async function sendCitationUnit(
   message: Message,
   unit: CitationUnit,
 ): Promise<void> {
-  const [firstEmbed, ...remainingEmbeds] = unit.embeds;
-  if (!firstEmbed) {
+  if (unit.embeds.length === 0) {
     return;
   }
 
-  const firstMessage = await replyWithoutPing(message, {
-    embeds: [firstEmbed],
-  });
-
-  if (remainingEmbeds.length === 0) {
+  if (unit.embeds.length === 1) {
+    await replyWithoutPing(message, { embeds: [unit.embeds[0]!] });
     return;
   }
 
-  await continueInThread(
-    firstMessage,
+  const inExistingThread = message.channel.isThread();
+
+  if (inExistingThread || !message.guild) {
+    const [firstEmbed, ...remainingEmbeds] = unit.embeds;
+    await replyWithoutPing(message, { embeds: [firstEmbed!] });
+
+    if (remainingEmbeds.length > 0) {
+      await sendEmbedsSequentially(
+        message.channel as SendableChannels,
+        remainingEmbeds,
+      );
+    }
+
+    return;
+  }
+
+  const thread = await startCitationThread(
+    message,
     unit.threadName ?? "Citation continued",
-    async (target) => {
-      await sendEmbedsSequentially(target, remainingEmbeds);
-    },
   );
+  await sendEmbedsSequentially(thread, unit.embeds);
 }
 
 function getGuildFormat(
