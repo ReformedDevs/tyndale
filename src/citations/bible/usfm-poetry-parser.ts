@@ -80,7 +80,20 @@ export function usfmIdToBookSlug(id: string): BookSlug | undefined {
 export function cleanUsfmText(raw: string): string {
   let text = raw;
   text = text.replace(/\\f\s[\s\S]*?\\f\*/g, "");
-  text = text.replace(/\\w\s*([^|\\]*)\|[^\\]*\\w\*/g, "$1");
+  text = text.replace(/\\w\s*([^\\]*?)\\w\*/g, (_, body: string) =>
+    body
+      .replace(
+        /\|(?:strong|lemma|x-strong|x-lemma|src|greek|hebrew)="[^"]*"/gi,
+        "",
+      )
+      .trim(),
+  );
+  text = text.replace(
+    /\|(?:strong|lemma|x-strong|x-lemma|src|greek|hebrew)="[^"]*"/gi,
+    "",
+  );
+  text = text.replace(/\\w\s*/g, "");
+  text = text.replace(/\\w\*/g, "");
   text = text.replace(/\\\+?[a-z0-9]+\*?/gi, "");
   text = text.replace(/\\[a-z0-9]+\s*/gi, "");
   text = text.replace(/\s+/g, " ").trim();

@@ -41,6 +41,20 @@ describe("cleanUsfmText", () => {
       cleanUsfmText(String.raw`\w LORD|strong="H3068"\w*'s\f + \fr 1:2 \ft note\f* law.`),
     ).toBe("LORD's law.");
   });
+
+  it("strips strong tags when word markers were partially removed", () => {
+    expect(
+      cleanUsfmText(
+        String.raw`“ I|strong="G1473" am|strong="G1510" the|strong="G2532" Alpha`,
+      ),
+    ).toBe("“ I am the Alpha");
+  });
+
+  it("strips word markers missing a closing tag", () => {
+    expect(cleanUsfmText(String.raw`\w I|strong="G1473" \w am|strong="G1510"`)).toBe(
+      "I am",
+    );
+  });
 });
 
 describe("parseUsfmLayout", () => {

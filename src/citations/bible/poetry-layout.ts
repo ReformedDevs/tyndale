@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { verseKey, type BookSlug } from "./books.js";
 import { TRANSLATIONS, type Translation } from "./lookup.js";
+import { cleanUsfmText } from "./usfm-poetry-parser.js";
 
 export interface PoetryLine {
   indent: 1 | 2 | 3;
@@ -24,11 +25,13 @@ export function formatPoetryVerseBlock(
   layout: PoetryVerseLayout,
 ): string[] {
   return layout.lines.map((line, index) => {
+    const text = cleanUsfmText(line.text);
+
     if (index === 0) {
-      return `**${verse}** ${line.text}`;
+      return `**${verse}** ${text}`;
     }
 
-    return `${EM_SPACE.repeat(line.indent)}${line.text}`;
+    return `${EM_SPACE.repeat(line.indent)}${text}`;
   });
 }
 
@@ -86,7 +89,11 @@ export function formatUsfmCitationLines(
       continue;
     }
 
-    const text = layout?.lines[0]?.text ?? fallback;
+    const text =
+      fallback ??
+      (layout?.lines[0]?.text
+        ? cleanUsfmText(layout.lines[0].text)
+        : undefined);
     if (!text) {
       return undefined;
     }

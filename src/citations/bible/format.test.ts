@@ -239,6 +239,61 @@ describe("buildBibleCitationEmbeds layout", () => {
     );
   });
 
+  it("uses clean verse text instead of USFM strong tags in literary mode", () => {
+    const lookup = VerseLookup.fromIndexes({
+      web: {
+        "rev.1.8":
+          "\"I am the Alpha and the Omega,\" says the Lord God, \"who is and who was and who is to come, the Almighty.\"",
+        "rev.1.9":
+          "I John, your brother and partner with you in the oppression, Kingdom, and perseverance in Christ Jesus, was on the isle that is called Patmos because of God's Word and the testimony of Jesus Christ.",
+      },
+      asv: {},
+      ylt: {},
+    });
+    const poetryLayout = PoetryLayoutLookup.fromIndex({
+      "rev.1.8": {
+        lines: [
+          {
+            indent: 1 as const,
+            text: "“ I|strong=\"G1473\" am|strong=\"G1510\" the|strong=\"G2532\" Alpha and|strong=\"G2532\" the|strong=\"G2532\" Omega|strong=\"G5598\", ” says the Lord God",
+          },
+        ],
+        paragraphBreakBefore: true,
+      },
+      "rev.1.9": {
+        lines: [
+          {
+            indent: 1 as const,
+            text: "I John, your brother and partner with you in the oppression, Kingdom, and perseverance in Christ Jesus, was on the isle that is called Patmos because of God's Word and the testimony of Jesus Christ.",
+          },
+        ],
+      },
+    });
+
+    const result = buildBibleCitationEmbeds(
+      {
+        kind: "bible",
+        raw: "[Rev 1:8-9]",
+        book: "rev",
+        bookName: "Revelation",
+        chapter: 1,
+        verses: [8, 9],
+      },
+      lookup,
+      "web",
+      "literary",
+      poetryLayout,
+    );
+
+    expect("error" in result).toBe(false);
+    if ("error" in result) {
+      return;
+    }
+
+    expect(result.embeds[0]?.data.description).not.toContain("strong=");
+    expect(result.embeds[0]?.data.description).toContain("Alpha and the Omega");
+  });
+
   it("formats YLT prose one verse per line in literary mode", () => {
     const lookup = VerseLookup.fromIndexes({
       web: {},
