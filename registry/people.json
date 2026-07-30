@@ -12,6 +12,17 @@
     "source": "wikipedia:Anne Askew"
   },
   {
+    "id": "benjamin-keach",
+    "name": "Benjamin Keach",
+    "aliases": [
+      "Keach"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Benjamin Keach"
+  },
+  {
     "id": "cotton-mather",
     "name": "Cotton Mather",
     "aliases": [
@@ -32,6 +43,17 @@
       "martyr"
     ],
     "source": "wikipedia:Donald Cargill"
+  },
+  {
+    "id": "hanserd-knollys",
+    "name": "Hanserd Knollys",
+    "aliases": [
+      "Knollys"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Hanserd Knollys"
   },
   {
     "id": "heinrich-bullinger",
@@ -207,6 +229,17 @@
     "source": "wikipedia:John Knox"
   },
   {
+    "id": "john-murton",
+    "name": "John Murton",
+    "aliases": [
+      "Murton"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Murton (theologian)"
+  },
+  {
     "id": "john-owen",
     "name": "John Owen",
     "aliases": [
@@ -227,6 +260,29 @@
       "martyr"
     ],
     "source": "wikipedia:John Rogers (Bible editor and martyr)"
+  },
+  {
+    "id": "john-smyth",
+    "name": "John Smyth",
+    "aliases": [
+      "Smyth",
+      "John Smith"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Smyth (Baptist minister)"
+  },
+  {
+    "id": "john-spilsbury",
+    "name": "John Spilsbury",
+    "aliases": [
+      "Spilsbury"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Spilsbury"
   },
   {
     "id": "john-wycliffe",
@@ -331,6 +387,17 @@
       "reformer"
     ],
     "source": "wikipedia:Myles Coverdale"
+  },
+  {
+    "id": "nehemiah-coxe",
+    "name": "Nehemiah Coxe",
+    "aliases": [
+      "Coxe"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Nehemiah Coxe"
   },
   {
     "id": "nicholas-ridley",
@@ -496,6 +563,29 @@
     "source": "wikipedia:Thomas Goodwin"
   },
   {
+    "id": "thomas-grantham",
+    "name": "Thomas Grantham",
+    "aliases": [
+      "Grantham"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Grantham (Baptist)"
+  },
+  {
+    "id": "thomas-helwys",
+    "name": "Thomas Helwys",
+    "aliases": [
+      "Helwys"
+    ],
+    "categories": [
+      "martyr",
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Helwys"
+  },
+  {
     "id": "thomas-hooker",
     "name": "Thomas Hooker",
     "aliases": [
@@ -561,6 +651,17 @@
       "reformer"
     ],
     "source": "wikipedia:William Farel"
+  },
+  {
+    "id": "william-kiffin",
+    "name": "William Kiffin",
+    "aliases": [
+      "Kiffin"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:William Kiffin"
   },
   {
     "id": "william-perkins",
