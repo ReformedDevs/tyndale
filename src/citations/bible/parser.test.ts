@@ -69,6 +69,13 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses server status pings", () => {
+    expect(parseBracketCitation("[Tyndale server status]")).toEqual({
+      kind: "serverStatus",
+      raw: "[Tyndale server status]",
+    });
+  });
+
   it("parses help pings", () => {
     expect(parseBracketCitation("[Tyndale help]")).toEqual({
       kind: "help",
@@ -91,6 +98,25 @@ describe("parseBracketCitation", () => {
     expect(parseBracketCitation("[Tyndale translation reset]")).toEqual({
       kind: "translation",
       raw: "[Tyndale translation reset]",
+      action: "reset",
+    });
+  });
+
+  it("parses server translation preference commands", () => {
+    expect(parseBracketCitation("[Tyndale server translation]")).toEqual({
+      kind: "serverTranslation",
+      raw: "[Tyndale server translation]",
+      action: "show",
+    });
+    expect(parseBracketCitation("[Tyndale server translation ylt]")).toEqual({
+      kind: "serverTranslation",
+      raw: "[Tyndale server translation ylt]",
+      action: "set",
+      translation: "ylt",
+    });
+    expect(parseBracketCitation("[Tyndale server translation reset]")).toEqual({
+      kind: "serverTranslation",
+      raw: "[Tyndale server translation reset]",
       action: "reset",
     });
   });

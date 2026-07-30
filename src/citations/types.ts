@@ -20,6 +20,11 @@ export interface ParsedStatusCitation {
   raw: string;
 }
 
+export interface ParsedServerStatusCitation {
+  kind: "serverStatus";
+  raw: string;
+}
+
 export interface ParsedHelpCitation {
   kind: "help";
   raw: string;
@@ -27,6 +32,13 @@ export interface ParsedHelpCitation {
 
 export interface ParsedTranslationCitation {
   kind: "translation";
+  raw: string;
+  action: "show" | "set" | "reset";
+  translation?: Translation;
+}
+
+export interface ParsedServerTranslationCitation {
+  kind: "serverTranslation";
   raw: string;
   action: "show" | "set" | "reset";
   translation?: Translation;
@@ -46,7 +58,9 @@ export interface ParsedIgnoredCitation {
 export type ParsedCitation =
   | ParsedBibleCitation
   | ParsedStatusCitation
+  | ParsedServerStatusCitation
   | ParsedHelpCitation
   | ParsedTranslationCitation
+  | ParsedServerTranslationCitation
   | ParsedCitationError
   | ParsedIgnoredCitation;

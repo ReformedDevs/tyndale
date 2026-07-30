@@ -3,8 +3,10 @@ dist/
 .env
 .env.*
 !.env.example
-# Verse indexes (web.json, asv.json, ylt.json) and user translation preferences
+# Verse indexes (web.json, asv.json, ylt.json) and translation preferences
 data/*.json
 data/user-translations.json
+data/guild-translations.json
+data/guild-analytics.json
 *.log
 .DS_Store

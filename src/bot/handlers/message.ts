@@ -12,13 +12,20 @@ import { findBracketCitations } from "../../citations/bible/parser.js";
 import type { VerseLookup, Translation } from "../../citations/bible/lookup.js";
 import type {
   ParsedBibleCitation,
+  ParsedServerTranslationCitation,
   ParsedTranslationCitation,
 } from "../../citations/types.js";
 import type { Config } from "../../config.js";
+import type { GuildAnalyticsStore } from "../../preferences/guild-analytics.js";
+import type { GuildTranslationStore } from "../../preferences/guild-translations.js";
 import type { UserTranslationStore } from "../../preferences/user-translations.js";
 import {
   buildErrorEmbed,
   buildHelpEmbed,
+  buildServerTranslationResetEmbed,
+  buildServerTranslationSetEmbed,
+  buildServerTranslationShowEmbed,
+  buildServerStatusEmbed,
   buildStatusEmbed,
   buildTranslationResetEmbed,
   buildTranslationSetEmbed,
@@ -29,6 +36,8 @@ export interface MessageHandlerDeps {
   config: Config;
   lookup: VerseLookup;
   userTranslations: UserTranslationStore;
+  guildTranslations: GuildTranslationStore;
+  guildAnalytics: GuildAnalyticsStore;
   startedAt: number;
 }
 
@@ -102,6 +111,68 @@ async function sendCitationUnit(
   );
 }
 
+function getGuildTranslation(
+  message: Message,
+  deps: MessageHandlerDeps,
+): Translation | undefined {
+  if (!message.guild) {
+    return undefined;
+  }
+
+  return deps.guildTranslations.get(message.guild.id);
+}
+
+function resolveDefaultTranslation(
+  message: Message,
+  deps: MessageHandlerDeps,
+): Translation {
+  const userTranslation = deps.userTranslations.get(message.author.id);
+  if (userTranslation) {
+    return userTranslation;
+  }
+
+  const guildTranslation = getGuildTranslation(message, deps);
+  if (guildTranslation) {
+    return guildTranslation;
+  }
+
+  return deps.config.DEFAULT_TRANSLATION;
+}
+
+async function resolveMemberLabel(
+  message: Message,
+  userId: string,
+): Promise<string> {
+  if (!message.guild || !userId) {
+    return userId || "unknown";
+  }
+
+  const member = await message.guild.members.fetch(userId).catch(() => null);
+  return member?.displayName ?? userId;
+}
+
+async function buildServerStatusEmbedForMessage(
+  message: Message,
+  deps: MessageHandlerDeps,
+): Promise<EmbedBuilder> {
+  const guildId = message.guild!.id;
+  const guildPreference = deps.guildTranslations.getPreference(guildId);
+  const analytics = deps.guildAnalytics.getSummary(guildId);
+
+  return buildServerStatusEmbed({
+    guildTranslation: guildPreference?.translation,
+    guildDefaultSetAt: guildPreference?.setAt || undefined,
+    guildDefaultSetBy: guildPreference?.setBy
+      ? await resolveMemberLabel(message, guildPreference.setBy)
+      : undefined,
+    botDefault: deps.config.DEFAULT_TRANSLATION,
+    memberOverrideCount: deps.userTranslations.countForGuild(guildId),
+    citationsTotal: analytics.citationsTotal,
+    citationsThisWeek: analytics.citationsThisWeek,
+    topBooks: analytics.topBooks,
+  });
+}
+
 async function buildTranslationPreferenceEmbed(
   message: Message,
   citation: ParsedTranslationCitation,
@@ -109,28 +180,70 @@ async function buildTranslationPreferenceEmbed(
 ): Promise<EmbedBuilder> {
   const userId = message.author.id;
   const botDefault = deps.config.DEFAULT_TRANSLATION;
+  const guildTranslation = getGuildTranslation(message, deps);
 
   switch (citation.action) {
     case "show":
       return buildTranslationShowEmbed(
         deps.userTranslations.get(userId),
+        guildTranslation,
         botDefault,
       );
     case "set":
-      await deps.userTranslations.set(userId, citation.translation!);
+      await deps.userTranslations.set(
+        userId,
+        citation.translation!,
+        message.guild?.id,
+      );
       return buildTranslationSetEmbed(citation.translation!);
     case "reset":
       await deps.userTranslations.clear(userId);
-      return buildTranslationResetEmbed(botDefault);
+      return buildTranslationResetEmbed(guildTranslation, botDefault);
   }
 }
 
-function appendBibleCitationUnit(
+async function buildServerTranslationPreferenceEmbed(
+  message: Message,
+  citation: ParsedServerTranslationCitation,
+  deps: MessageHandlerDeps,
+): Promise<EmbedBuilder> {
+  const botDefault = deps.config.DEFAULT_TRANSLATION;
+
+  if (!message.guild) {
+    return buildErrorEmbed(
+      "Server translation preferences can only be viewed or changed in a server.",
+    );
+  }
+
+  const guildId = message.guild.id;
+  const guildTranslation = deps.guildTranslations.get(guildId);
+
+  if (citation.action === "show") {
+    return buildServerTranslationShowEmbed(guildTranslation, botDefault);
+  }
+
+  switch (citation.action) {
+    case "set":
+      await deps.guildTranslations.set(
+        guildId,
+        citation.translation!,
+        message.author.id,
+      );
+      return buildServerTranslationSetEmbed(citation.translation!);
+    case "reset":
+      await deps.guildTranslations.clear(guildId);
+      return buildServerTranslationResetEmbed(botDefault);
+  }
+}
+
+async function appendBibleCitationUnit(
+  message: Message,
+  deps: MessageHandlerDeps,
   units: CitationUnit[],
   bibleCitations: ParsedBibleCitation[],
   lookup: VerseLookup,
   defaultTranslation: Translation,
-): void {
+): Promise<void> {
   if (bibleCitations.length === 0) {
     return;
   }
@@ -143,6 +256,13 @@ function appendBibleCitationUnit(
 
   if (result.embeds.length === 0) {
     return;
+  }
+
+  if (message.guild) {
+    await deps.guildAnalytics.recordCitations(
+      message.guild.id,
+      bibleCitations,
+    );
   }
 
   units.push({
@@ -174,10 +294,7 @@ async function handleMessage(
     return;
   }
 
-  const defaultTranslation = deps.userTranslations.resolve(
-    message.author.id,
-    deps.config.DEFAULT_TRANSLATION,
-  );
+  const defaultTranslation = resolveDefaultTranslation(message, deps);
   const units: CitationUnit[] = [];
   let pendingBibleCitations: ParsedBibleCitation[] = [];
 
@@ -187,7 +304,9 @@ async function handleMessage(
         pendingBibleCitations.push(citation);
         break;
       default:
-        appendBibleCitationUnit(
+        await appendBibleCitationUnit(
+          message,
+          deps,
           units,
           pendingBibleCitations,
           deps.lookup,
@@ -204,10 +323,37 @@ async function handleMessage(
           case "status":
             units.push({ embeds: [buildStatusEmbed(client, deps.startedAt)] });
             break;
+          case "serverStatus":
+            if (!message.guild) {
+              units.push({
+                embeds: [
+                  buildErrorEmbed(
+                    "Server status can only be viewed in a server.",
+                  ),
+                ],
+              });
+              break;
+            }
+
+            units.push({
+              embeds: [await buildServerStatusEmbedForMessage(message, deps)],
+            });
+            break;
           case "translation":
             units.push({
               embeds: [
                 await buildTranslationPreferenceEmbed(message, citation, deps),
+              ],
+            });
+            break;
+          case "serverTranslation":
+            units.push({
+              embeds: [
+                await buildServerTranslationPreferenceEmbed(
+                  message,
+                  citation,
+                  deps,
+                ),
               ],
             });
             break;
@@ -219,7 +365,9 @@ async function handleMessage(
     }
   }
 
-  appendBibleCitationUnit(
+  await appendBibleCitationUnit(
+    message,
+    deps,
     units,
     pendingBibleCitations,
     deps.lookup,

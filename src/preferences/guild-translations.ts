@@ -5,78 +5,74 @@ import {
   type Translation,
 } from "../citations/bible/lookup.js";
 
-interface UserTranslationPreference {
+export interface GuildTranslationPreference {
   translation: Translation;
-  setInGuildId?: string;
+  setAt: string;
+  setBy: string;
 }
 
-type UserTranslationPreferences = Record<string, UserTranslationPreference>;
+type GuildTranslationPreferences = Record<string, GuildTranslationPreference>;
 
-export class UserTranslationStore {
-  private preferences: UserTranslationPreferences;
+export class GuildTranslationStore {
+  private preferences: GuildTranslationPreferences;
 
   private constructor(
     private readonly filePath: string,
-    preferences: UserTranslationPreferences,
+    preferences: GuildTranslationPreferences,
   ) {
     this.preferences = preferences;
   }
 
-  static async load(filePath: string): Promise<UserTranslationStore> {
+  static async load(filePath: string): Promise<GuildTranslationStore> {
     try {
       const raw = await readFile(filePath, "utf8");
       const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const preferences: UserTranslationPreferences = {};
+      const preferences: GuildTranslationPreferences = {};
 
-      for (const [userId, value] of Object.entries(parsed)) {
+      for (const [guildId, value] of Object.entries(parsed)) {
         const preference = parseStoredPreference(value);
         if (preference) {
-          preferences[userId] = preference;
+          preferences[guildId] = preference;
         }
       }
 
-      return new UserTranslationStore(filePath, preferences);
+      return new GuildTranslationStore(filePath, preferences);
     } catch (error) {
       if (
         error instanceof Error &&
         "code" in error &&
         error.code === "ENOENT"
       ) {
-        return new UserTranslationStore(filePath, {});
+        return new GuildTranslationStore(filePath, {});
       }
 
       throw error;
     }
   }
 
-  get(userId: string): Translation | undefined {
-    return this.preferences[userId]?.translation;
+  get(guildId: string): Translation | undefined {
+    return this.preferences[guildId]?.translation;
   }
 
-  resolve(userId: string, botDefault: Translation): Translation {
-    return this.preferences[userId]?.translation ?? botDefault;
-  }
-
-  countForGuild(guildId: string): number {
-    return Object.values(this.preferences).filter(
-      (preference) => preference.setInGuildId === guildId,
-    ).length;
+  getPreference(guildId: string): GuildTranslationPreference | undefined {
+    return this.preferences[guildId];
   }
 
   async set(
-    userId: string,
+    guildId: string,
     translation: Translation,
-    setInGuildId?: string,
+    setBy: string,
   ): Promise<void> {
-    this.preferences[userId] = {
+    this.preferences[guildId] = {
       translation,
-      ...(setInGuildId ? { setInGuildId } : {}),
+      setAt: new Date().toISOString(),
+      setBy,
     };
     await this.persist();
   }
 
-  async clear(userId: string): Promise<void> {
-    delete this.preferences[userId];
+  async clear(guildId: string): Promise<void> {
+    delete this.preferences[guildId];
     await this.persist();
   }
 
@@ -91,9 +87,13 @@ export class UserTranslationStore {
 
 function parseStoredPreference(
   value: unknown,
-): UserTranslationPreference | undefined {
+): GuildTranslationPreference | undefined {
   if (typeof value === "string" && isTranslation(value)) {
-    return { translation: value };
+    return {
+      translation: value,
+      setAt: "",
+      setBy: "",
+    };
   }
 
   if (typeof value !== "object" || value === null) {
@@ -110,7 +110,7 @@ function parseStoredPreference(
 
   return {
     translation: record.translation,
-    setInGuildId:
-      typeof record.setInGuildId === "string" ? record.setInGuildId : undefined,
+    setAt: typeof record.setAt === "string" ? record.setAt : "",
+    setBy: typeof record.setBy === "string" ? record.setBy : "",
   };
 }

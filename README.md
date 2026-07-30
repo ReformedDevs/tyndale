@@ -57,11 +57,15 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
 | Bot help | `[Tyndale help]` |
 | Bot status | `[Tyndale status]` |
+| Server defaults | `[Tyndale server status]` |
 | Your default translation | `[Tyndale translation]` |
 | Set your default translation | `[Tyndale translation asv]` |
-| Reset to bot default | `[Tyndale translation reset]` |
+| Reset your default translation | `[Tyndale translation reset]` |
+| Server default translation | `[Tyndale server translation]` |
+| Set server default translation | `[Tyndale server translation asv]` |
+| Reset server default translation | `[Tyndale server translation reset]` |
 
-The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Each user can set a personal default translation with `[Tyndale translation asv]`; explicit translation prefixes like `[YLT Gen 1:1]` still override it. It replies with an error only when a bracket looks like a broken reference (e.g. `[Gen 1:3-10:]`, unknown book).
+The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. It replies with an error only when a bracket looks like a broken reference (e.g. `[Gen 1:3-10:]`, unknown book).
 
 ## Scripts
 

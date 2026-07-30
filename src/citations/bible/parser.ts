@@ -13,7 +13,10 @@ const CHAPTER_ONLY_PATTERN = /^(.+?)\s+(\d+)$/;
 const CHAPTER_END_PATTERN = /^(.+?)\s+(\d+):(?:(\d+)-)?end$/i;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
+const SERVER_STATUS_PATTERN = /^tyndale\s+server\s+status$/i;
 const HELP_PATTERN = /^tyndale\s+help$/i;
+const SERVER_TRANSLATION_PATTERN =
+  /^tyndale\s+server\s+translation(?:\s+(\S+))?$/i;
 const TRANSLATION_PATTERN = /^tyndale\s+translation(?:\s+(\S+))?$/i;
 
 function normalizeBookInput(input: string): string {
@@ -135,6 +138,38 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
 
   if (HELP_PATTERN.test(normalized)) {
     return { kind: "help", raw };
+  }
+
+  if (SERVER_STATUS_PATTERN.test(normalized)) {
+    return { kind: "serverStatus", raw };
+  }
+
+  const serverTranslationMatch = SERVER_TRANSLATION_PATTERN.exec(normalized);
+  if (serverTranslationMatch) {
+    const value = serverTranslationMatch[1]?.trim();
+
+    if (!value) {
+      return { kind: "serverTranslation", raw, action: "show" };
+    }
+
+    if (value.toLowerCase() === "reset") {
+      return { kind: "serverTranslation", raw, action: "reset" };
+    }
+
+    const translation = normalizeTranslation(value);
+    if (!translation) {
+      return errorCitation(
+        raw,
+        `Unknown translation "${value}". Use WEB, ASV, or YLT.`,
+      );
+    }
+
+    return {
+      kind: "serverTranslation",
+      raw,
+      action: "set",
+      translation,
+    };
   }
 
   const translationMatch = TRANSLATION_PATTERN.exec(normalized);

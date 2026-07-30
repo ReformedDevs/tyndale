@@ -30,13 +30,14 @@ describe("UserTranslationStore", () => {
   it("persists and reloads user preferences", async () => {
     const store = await UserTranslationStore.load(filePath);
 
-    await store.set("user-1", "asv");
+    await store.set("user-1", "asv", "guild-1");
     await store.set("user-2", "ylt");
 
     const reloaded = await UserTranslationStore.load(filePath);
 
     expect(reloaded.get("user-1")).toBe("asv");
     expect(reloaded.resolve("user-2", "web")).toBe("ylt");
+    expect(reloaded.countForGuild("guild-1")).toBe(1);
   });
 
   it("clears a user preference", async () => {

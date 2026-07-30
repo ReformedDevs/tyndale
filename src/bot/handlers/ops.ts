@@ -46,9 +46,13 @@ export function formatHelpReply(defaultTranslation: Translation): string {
     "**Bot commands**",
     "• `[Tyndale help]` — this message",
     "• `[Tyndale status]` — uptime and health",
+    "• `[Tyndale server status]` — server defaults",
     "• `[Tyndale translation]` — your default translation",
     "• `[Tyndale translation asv]` — set your default",
-    "• `[Tyndale translation reset]` — use bot default",
+    "• `[Tyndale translation reset]` — use server or bot default",
+    "• `[Tyndale server translation]` — this server's default",
+    "• `[Tyndale server translation asv]` — set server default",
+    "• `[Tyndale server translation reset]` — clear server default",
     "",
     "Brackets inside `>` quote lines are ignored. Non-citation brackets like `[hello]` are skipped.",
   ].join("\n");
@@ -73,6 +77,7 @@ export function buildErrorEmbed(message: string): EmbedBuilder {
 
 export function buildTranslationShowEmbed(
   userTranslation: Translation | undefined,
+  guildTranslation: Translation | undefined,
   botDefault: Translation,
 ): EmbedBuilder {
   if (userTranslation) {
@@ -80,7 +85,17 @@ export function buildTranslationShowEmbed(
       [
         "**Tyndale** · translation",
         `Your default translation is **${userTranslation.toUpperCase()}**.`,
-        `Bot default: ${botDefault.toUpperCase()}.`,
+        "I'll use it for your citations unless you specify another one.",
+      ].join("\n"),
+    );
+  }
+
+  if (guildTranslation) {
+    return createTyndaleEmbed(
+      [
+        "**Tyndale** · translation",
+        `You're using this server's default: **${guildTranslation.toUpperCase()}**.`,
+        "Set a personal override with `[Tyndale translation asv]`.",
       ].join("\n"),
     );
   }
@@ -104,13 +119,133 @@ export function buildTranslationSetEmbed(translation: Translation): EmbedBuilder
   );
 }
 
-export function buildTranslationResetEmbed(botDefault: Translation): EmbedBuilder {
+export function buildTranslationResetEmbed(
+  guildTranslation: Translation | undefined,
+  botDefault: Translation,
+): EmbedBuilder {
+  const fallback = guildTranslation ?? botDefault;
+  const source = guildTranslation ? "this server's default" : "the bot default";
+
   return createTyndaleEmbed(
     [
       "**Tyndale** · translation",
-      `Cleared your translation preference. Using bot default: **${botDefault.toUpperCase()}**.`,
+      `Cleared your translation preference. Using ${source}: **${fallback.toUpperCase()}**.`,
     ].join("\n"),
   );
+}
+
+export function buildServerTranslationShowEmbed(
+  guildTranslation: Translation | undefined,
+  botDefault: Translation,
+): EmbedBuilder {
+  if (guildTranslation) {
+    return createTyndaleEmbed(
+      [
+        "**Tyndale** · server translation",
+        `This server's default translation is **${guildTranslation.toUpperCase()}**.`,
+        `Bot default: ${botDefault.toUpperCase()}.`,
+      ].join("\n"),
+    );
+  }
+
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · server translation",
+      `This server uses the bot default: **${botDefault.toUpperCase()}**.`,
+      "Set one with `[Tyndale server translation asv]`.",
+    ].join("\n"),
+  );
+}
+
+export function buildServerTranslationSetEmbed(
+  translation: Translation,
+): EmbedBuilder {
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · server translation",
+      `This server's default translation is now **${translation.toUpperCase()}**.`,
+      "Members can still override it with their own `[Tyndale translation ...]` setting.",
+    ].join("\n"),
+  );
+}
+
+export function buildServerTranslationResetEmbed(
+  botDefault: Translation,
+): EmbedBuilder {
+  return createTyndaleEmbed(
+    [
+      "**Tyndale** · server translation",
+      `Cleared this server's translation preference. Using bot default: **${botDefault.toUpperCase()}**.`,
+    ].join("\n"),
+  );
+}
+
+export function buildServerStatusEmbed(details: ServerStatusDetails): EmbedBuilder {
+  const translations = TRANSLATIONS.map((translation) =>
+    translation.toUpperCase(),
+  ).join(", ");
+  const effectiveDefault = details.guildTranslation ?? details.botDefault;
+  const lines = [
+    "**Tyndale** · server status",
+    details.guildTranslation
+      ? `*Server default translation:* ${details.guildTranslation.toUpperCase()}`
+      : `*Server default translation:* ${details.botDefault.toUpperCase()} (bot default)`,
+  ];
+
+  if (details.guildTranslation && details.guildDefaultSetAt) {
+    const setAtLabel = formatStatusTimestamp(details.guildDefaultSetAt);
+    const setByLabel = details.guildDefaultSetBy ?? "unknown";
+    lines.push(`*Set:* ${setAtLabel} by ${setByLabel}`);
+  }
+
+  lines.push(
+    `*Bot default:* ${details.botDefault.toUpperCase()}`,
+    `*Available translations:* ${translations}`,
+    `*Personal overrides in this server:* ${details.memberOverrideCount}`,
+    "",
+    `Members without a personal setting use **${effectiveDefault.toUpperCase()}**.`,
+    "",
+    `*Citations this week:* ${details.citationsThisWeek}`,
+    `*Citations total:* ${details.citationsTotal}`,
+    `*Most cited:* ${formatTopBooks(details.topBooks)}`,
+  );
+
+  return createTyndaleEmbed(lines.join("\n"));
+}
+
+export interface ServerStatusDetails {
+  guildTranslation?: Translation;
+  guildDefaultSetAt?: string;
+  guildDefaultSetBy?: string;
+  botDefault: Translation;
+  memberOverrideCount: number;
+  citationsTotal: number;
+  citationsThisWeek: number;
+  topBooks: Array<{ bookName: string; count: number }>;
+}
+
+function formatStatusTimestamp(isoTimestamp: string): string {
+  const timestamp = Date.parse(isoTimestamp);
+  if (Number.isNaN(timestamp)) {
+    return "unknown time";
+  }
+
+  return new Date(timestamp).toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function formatTopBooks(
+  topBooks: Array<{ bookName: string; count: number }>,
+): string {
+  if (topBooks.length === 0) {
+    return "none yet";
+  }
+
+  return topBooks
+    .map((entry) => `${entry.bookName} (${entry.count})`)
+    .join(", ");
 }
 
 export function formatStatusReply(client: Client, startedAt: number): string {

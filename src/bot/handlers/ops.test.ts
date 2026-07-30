@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildHelpEmbed,
+  buildServerStatusEmbed,
   buildStatusEmbed,
   buildTranslationSetEmbed,
   formatHelpReply,
@@ -39,6 +40,48 @@ describe("buildStatusEmbed", () => {
 
     expect(embed.color).toBe(0xb59b3c);
     expect(embed.description).toContain("**Tyndale** · online");
+  });
+});
+
+describe("buildServerStatusEmbed", () => {
+  it("shows server defaults, overrides, and usage stats", () => {
+    const embed = buildServerStatusEmbed({
+      guildTranslation: "asv",
+      guildDefaultSetAt: "2026-07-29T18:00:00.000Z",
+      guildDefaultSetBy: "Charles",
+      botDefault: "web",
+      memberOverrideCount: 2,
+      citationsTotal: 10,
+      citationsThisWeek: 4,
+      topBooks: [
+        { bookName: "Genesis", count: 3 },
+        { bookName: "John", count: 2 },
+      ],
+    }).toJSON();
+
+    expect(embed.description).toContain("**Tyndale** · server status");
+    expect(embed.description).toContain("*Server default translation:* ASV");
+    expect(embed.description).toContain("*Set:*");
+    expect(embed.description).toContain("by Charles");
+    expect(embed.description).toContain("*Personal overrides in this server:* 2");
+    expect(embed.description).toContain("*Citations this week:* 4");
+    expect(embed.description).toContain("*Citations total:* 10");
+    expect(embed.description).toContain("*Most cited:* Genesis (3), John (2)");
+  });
+
+  it("notes when the server uses the bot default", () => {
+    const embed = buildServerStatusEmbed({
+      botDefault: "web",
+      memberOverrideCount: 0,
+      citationsTotal: 0,
+      citationsThisWeek: 0,
+      topBooks: [],
+    }).toJSON();
+
+    expect(embed.description).toContain(
+      "*Server default translation:* WEB (bot default)",
+    );
+    expect(embed.description).toContain("*Most cited:* none yet");
   });
 });
 
