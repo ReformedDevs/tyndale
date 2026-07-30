@@ -24,6 +24,7 @@ Add your bot token to `.env`:
 ```env
 DISCORD_BOT_TOKEN=your_token_here
 DEFAULT_TRANSLATION=web
+DEFAULT_TEXT_FORMAT=literary
 LOG_LEVEL=info
 ```
 
@@ -64,15 +65,21 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Server default translation | `[Tyndale server translation]` |
 | Set server default translation | `[Tyndale server translation asv]` |
 | Reset server default translation | `[Tyndale server translation reset]` |
+| Your text layout | `[Tyndale format]` |
+| Set your text layout | `[Tyndale format verse]`, `[Tyndale format literary]`, `[Tyndale format paragraph]` |
+| Reset your text layout | `[Tyndale format reset]` |
+| Server text layout | `[Tyndale server format]` |
+| Set server text layout | `[Tyndale server format verse]` |
+| Reset server text layout | `[Tyndale server format reset]` |
 
-The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. It replies with an error only when a bracket looks like a broken reference (e.g. `[Gen 1:3-10:]`, unknown book).
+The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. Default text layout priority is the same: your setting → server setting → `DEFAULT_TEXT_FORMAT` env (`literary`, `paragraph`, or `verse`). **Literary** uses each translation's own USFM layout when index files are present: poetry line breaks and indents where marked, prose paragraph groupings where `\p` markers exist (WEB, ASV). YLT uses verse-per-line prose in literary mode, matching how it is typically printed. **Paragraph** always joins verses together. **Verse** always puts each verse on its own line.
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start the bot with hot reload |
-| `npm run build-data` | Download and build verse index files |
+| `npm run build-data` | Download verse indexes and USFM layout for all books |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled bot |
 | `npm test` | Run tests |

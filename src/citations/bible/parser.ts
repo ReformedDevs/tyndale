@@ -1,5 +1,6 @@
 import { BOOKS, type BookSlug } from "./books.js";
 import { normalizeTranslation, type Translation } from "./lookup.js";
+import { normalizeTextFormat } from "./text-format.js";
 import type {
   ParsedCitation,
   ParsedCitationError,
@@ -18,6 +19,8 @@ const HELP_PATTERN = /^tyndale\s+help$/i;
 const SERVER_TRANSLATION_PATTERN =
   /^tyndale\s+server\s+translation(?:\s+(\S+))?$/i;
 const TRANSLATION_PATTERN = /^tyndale\s+translation(?:\s+(\S+))?$/i;
+const SERVER_FORMAT_PATTERN = /^tyndale\s+server\s+format(?:\s+(\S+))?$/i;
+const FORMAT_PATTERN = /^tyndale\s+format(?:\s+(\S+))?$/i;
 
 function normalizeBookInput(input: string): string {
   return input.toLowerCase().replace(/\./g, "").replace(/\s+/g, "");
@@ -197,6 +200,62 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
       raw,
       action: "set",
       translation,
+    };
+  }
+
+  const serverFormatMatch = SERVER_FORMAT_PATTERN.exec(normalized);
+  if (serverFormatMatch) {
+    const value = serverFormatMatch[1]?.trim();
+
+    if (!value) {
+      return { kind: "serverFormat", raw, action: "show" };
+    }
+
+    if (value.toLowerCase() === "reset") {
+      return { kind: "serverFormat", raw, action: "reset" };
+    }
+
+    const format = normalizeTextFormat(value);
+    if (!format) {
+      return errorCitation(
+        raw,
+        `Unknown format "${value}". Use literary, paragraph, or verse.`,
+      );
+    }
+
+    return {
+      kind: "serverFormat",
+      raw,
+      action: "set",
+      format,
+    };
+  }
+
+  const formatMatch = FORMAT_PATTERN.exec(normalized);
+  if (formatMatch) {
+    const value = formatMatch[1]?.trim();
+
+    if (!value) {
+      return { kind: "format", raw, action: "show" };
+    }
+
+    if (value.toLowerCase() === "reset") {
+      return { kind: "format", raw, action: "reset" };
+    }
+
+    const format = normalizeTextFormat(value);
+    if (!format) {
+      return errorCitation(
+        raw,
+        `Unknown format "${value}". Use literary, paragraph, or verse.`,
+      );
+    }
+
+    return {
+      kind: "format",
+      raw,
+      action: "set",
+      format,
     };
   }
 

@@ -1,12 +1,21 @@
 import { EmbedBuilder } from "discord.js";
 
 import type { ParsedBibleCitation } from "../types.js";
-import type { Translation, VerseLookup } from "./lookup.js";
+import type { VerseLookup, Translation } from "./lookup.js";
+import { usesVersePerLineProse } from "./lookup.js";
+import { formatUsfmCitationLines, PoetryLayoutLookup } from "./poetry-layout.js";
+import {
+  formatQuoteBlock,
+  joinVerseLines,
+  resolveVerseLayout,
+  type TextFormat,
+} from "./text-format.js";
 
 const DISCORD_MESSAGE_LIMIT = 1900;
 /** Per-embed description cap (Discord max 4096; 6000 total chars allowed per message). */
 const DISCORD_EMBED_DESCRIPTION_BUFFER = 4000;
 const EMBED_COLOR = 0xb59b3c;
+const EMPTY_POETRY_LAYOUT = PoetryLayoutLookup.fromIndex({});
 
 function isContiguous(verses: number[]): boolean {
   for (let index = 1; index < verses.length; index += 1) {
@@ -47,14 +56,11 @@ function formatVerseLine(verse: number, text: string): string {
   return `**${verse}.** ${text}`;
 }
 
-function formatQuoteBlock(lines: string[]): string {
-  return `> ${lines.join(" ")}`;
-}
-
 interface BibleCitationContent {
   label: string;
   translationLabel: string;
   verseLines: string[];
+  verseLayout: "paragraph" | "verse" | "usfm";
 }
 
 interface BibleCitationError {
@@ -64,7 +70,9 @@ interface BibleCitationError {
 function resolveBibleCitationContent(
   citation: ParsedBibleCitation,
   lookup: VerseLookup,
+  poetryLayout: PoetryLayoutLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat,
 ): BibleCitationContent | BibleCitationError {
   const translation = citation.translation ?? defaultTranslation;
   const verses = lookup.expandVerses(
@@ -94,6 +102,39 @@ function resolveBibleCitationContent(
     verses,
   );
   const translationLabel = translation.toUpperCase();
+  const hasUsfmLayout = poetryLayout.hasBook(translation, citation.book);
+  const verseLayout = resolveVerseLayout(
+    textFormat,
+    citation.book,
+    hasUsfmLayout,
+  );
+
+  if (verseLayout === "usfm") {
+    const usfmLines = formatUsfmCitationLines(
+      verses,
+      (verse) =>
+        poetryLayout.getVerse(translation, citation.book, citation.chapter, verse),
+      (verse) =>
+        lookup.getVerse(translation, citation.book, citation.chapter, verse),
+      {
+        proseLayout: usesVersePerLineProse(translation) ? "verse" : "paragraph",
+      },
+    );
+
+    if (!usfmLines) {
+      return {
+        error: `_${label} not found in ${translationLabel}_`,
+      };
+    }
+
+    return {
+      label,
+      translationLabel,
+      verseLines: usfmLines,
+      verseLayout,
+    };
+  }
+
   const verseLines: string[] = [];
 
   for (const verse of verses) {
@@ -113,25 +154,34 @@ function resolveBibleCitationContent(
     verseLines.push(formatVerseLine(verse, text));
   }
 
-  return { label, translationLabel, verseLines };
+  return {
+    label,
+    translationLabel,
+    verseLines,
+    verseLayout,
+  };
 }
 
 export function resolveBibleCitation(
   citation: ParsedBibleCitation,
   lookup: VerseLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat = "literary",
+  poetryLayout: PoetryLayoutLookup = EMPTY_POETRY_LAYOUT,
 ): string {
   const content = resolveBibleCitationContent(
     citation,
     lookup,
+    poetryLayout,
     defaultTranslation,
+    textFormat,
   );
 
   if ("error" in content) {
     return content.error;
   }
 
-  return `${formatQuoteBlock(content.verseLines)}\n\n${formatCitationFooter(content.label, content.translationLabel)}`;
+  return `${formatQuoteBlock(content.verseLines, content.verseLayout)}\n\n${formatCitationFooter(content.label, content.translationLabel)}`;
 }
 
 export function getCitationThreadName(
@@ -220,6 +270,8 @@ export function buildBibleCitationEmbedsForMany(
   citations: ParsedBibleCitation[],
   lookup: VerseLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat = "literary",
+  poetryLayout: PoetryLayoutLookup = EMPTY_POETRY_LAYOUT,
 ): BibleCitationEmbedResult {
   if (citations.length === 0) {
     return { embeds: [], threadName: "Citations" };
@@ -230,6 +282,8 @@ export function buildBibleCitationEmbedsForMany(
       citations[0]!,
       lookup,
       defaultTranslation,
+      textFormat,
+      poetryLayout,
     );
 
     if ("error" in result) {
@@ -249,7 +303,9 @@ export function buildBibleCitationEmbedsForMany(
     const content = resolveBibleCitationContent(
       citation,
       lookup,
+      poetryLayout,
       defaultTranslation,
+      textFormat,
     );
 
     if ("error" in content) {
@@ -274,7 +330,7 @@ export function buildBibleCitationEmbedsForMany(
       parts.push("---");
     }
 
-    parts.push(block.verseLines.join(" "));
+    parts.push(joinVerseLines(block.verseLines, block.verseLayout));
     parts.push(formatCitationFooter(block.label, block.translationLabel));
   }
 
@@ -288,11 +344,15 @@ export function buildBibleCitationEmbeds(
   citation: ParsedBibleCitation,
   lookup: VerseLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat = "literary",
+  poetryLayout: PoetryLayoutLookup = EMPTY_POETRY_LAYOUT,
 ): BibleCitationEmbedResult | BibleCitationError {
   const content = resolveBibleCitationContent(
     citation,
     lookup,
+    poetryLayout,
     defaultTranslation,
+    textFormat,
   );
 
   if ("error" in content) {
@@ -303,15 +363,17 @@ export function buildBibleCitationEmbeds(
   const embeds: EmbedBuilder[] = [];
   let batch: string[] = [];
   let batchLength = 0;
+  const lineSeparator = content.verseLayout === "paragraph" ? " " : "\n";
 
   for (const line of content.verseLines) {
-    const addition = batch.length === 0 ? line.length : line.length + 1;
+    const addition =
+      batch.length === 0 ? line.length : line.length + lineSeparator.length;
 
     if (
       batchLength + addition > DISCORD_EMBED_DESCRIPTION_BUFFER &&
       batch.length > 0
     ) {
-      embeds.push(createTyndaleEmbed(batch.join(" ")));
+      embeds.push(createTyndaleEmbed(batch.join(lineSeparator)));
       batch = [line];
       batchLength = line.length;
       continue;
@@ -322,7 +384,7 @@ export function buildBibleCitationEmbeds(
   }
 
   if (batch.length > 0) {
-    embeds.push(createTyndaleEmbed(batch.join(" "), footer));
+    embeds.push(createTyndaleEmbed(batch.join(lineSeparator), footer));
   } else if (embeds.length > 0) {
     embeds.at(-1)?.setFooter({ text: footer });
   }
@@ -338,8 +400,16 @@ export function buildBibleCitationEmbed(
   citation: ParsedBibleCitation,
   lookup: VerseLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat = "literary",
+  poetryLayout: PoetryLayoutLookup = EMPTY_POETRY_LAYOUT,
 ): EmbedBuilder | null {
-  const result = buildBibleCitationEmbeds(citation, lookup, defaultTranslation);
+  const result = buildBibleCitationEmbeds(
+    citation,
+    lookup,
+    defaultTranslation,
+    textFormat,
+    poetryLayout,
+  );
 
   if ("error" in result) {
     return null;

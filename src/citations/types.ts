@@ -1,5 +1,6 @@
 import type { BookSlug } from "./bible/books.js";
 import type { Translation } from "./bible/lookup.js";
+import type { TextFormat } from "./bible/text-format.js";
 
 export type CitationSource = "bible" | "lbcf" | "wcf";
 
@@ -44,6 +45,20 @@ export interface ParsedServerTranslationCitation {
   translation?: Translation;
 }
 
+export interface ParsedFormatCitation {
+  kind: "format";
+  raw: string;
+  action: "show" | "set" | "reset";
+  format?: TextFormat;
+}
+
+export interface ParsedServerFormatCitation {
+  kind: "serverFormat";
+  raw: string;
+  action: "show" | "set" | "reset";
+  format?: TextFormat;
+}
+
 export interface ParsedCitationError {
   kind: "error";
   raw: string;
@@ -62,5 +77,7 @@ export type ParsedCitation =
   | ParsedHelpCitation
   | ParsedTranslationCitation
   | ParsedServerTranslationCitation
+  | ParsedFormatCitation
+  | ParsedServerFormatCitation
   | ParsedCitationError
   | ParsedIgnoredCitation;

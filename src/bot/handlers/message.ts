@@ -10,18 +10,30 @@ import {
 import { buildBibleCitationEmbedsForMany } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
 import type { VerseLookup, Translation } from "../../citations/bible/lookup.js";
+import type { PoetryLayoutLookup } from "../../citations/bible/poetry-layout.js";
+import type { TextFormat } from "../../citations/bible/text-format.js";
 import type {
   ParsedBibleCitation,
+  ParsedFormatCitation,
+  ParsedServerFormatCitation,
   ParsedServerTranslationCitation,
   ParsedTranslationCitation,
 } from "../../citations/types.js";
 import type { Config } from "../../config.js";
 import type { GuildAnalyticsStore } from "../../preferences/guild-analytics.js";
+import type { GuildFormatStore } from "../../preferences/guild-formats.js";
 import type { GuildTranslationStore } from "../../preferences/guild-translations.js";
+import type { UserFormatStore } from "../../preferences/user-formats.js";
 import type { UserTranslationStore } from "../../preferences/user-translations.js";
 import {
   buildErrorEmbed,
+  buildFormatResetEmbed,
+  buildFormatSetEmbed,
+  buildFormatShowEmbed,
   buildHelpEmbed,
+  buildServerFormatResetEmbed,
+  buildServerFormatSetEmbed,
+  buildServerFormatShowEmbed,
   buildServerTranslationResetEmbed,
   buildServerTranslationSetEmbed,
   buildServerTranslationShowEmbed,
@@ -35,8 +47,11 @@ import {
 export interface MessageHandlerDeps {
   config: Config;
   lookup: VerseLookup;
+  poetryLayout: PoetryLayoutLookup;
   userTranslations: UserTranslationStore;
   guildTranslations: GuildTranslationStore;
+  userFormats: UserFormatStore;
+  guildFormats: GuildFormatStore;
   guildAnalytics: GuildAnalyticsStore;
   startedAt: number;
 }
@@ -139,6 +154,34 @@ function resolveDefaultTranslation(
   return deps.config.DEFAULT_TRANSLATION;
 }
 
+function getGuildFormat(
+  message: Message,
+  deps: MessageHandlerDeps,
+): TextFormat | undefined {
+  if (!message.guild) {
+    return undefined;
+  }
+
+  return deps.guildFormats.get(message.guild.id);
+}
+
+function resolveDefaultTextFormat(
+  message: Message,
+  deps: MessageHandlerDeps,
+): TextFormat {
+  const userFormat = deps.userFormats.get(message.author.id);
+  if (userFormat) {
+    return userFormat;
+  }
+
+  const guildFormat = getGuildFormat(message, deps);
+  if (guildFormat) {
+    return guildFormat;
+  }
+
+  return deps.config.DEFAULT_TEXT_FORMAT;
+}
+
 async function resolveMemberLabel(
   message: Message,
   userId: string,
@@ -157,6 +200,7 @@ async function buildServerStatusEmbedForMessage(
 ): Promise<EmbedBuilder> {
   const guildId = message.guild!.id;
   const guildPreference = deps.guildTranslations.getPreference(guildId);
+  const guildFormatPreference = deps.guildFormats.getPreference(guildId);
   const analytics = deps.guildAnalytics.getSummary(guildId);
 
   return buildServerStatusEmbed({
@@ -165,8 +209,15 @@ async function buildServerStatusEmbedForMessage(
     guildDefaultSetBy: guildPreference?.setBy
       ? await resolveMemberLabel(message, guildPreference.setBy)
       : undefined,
+    guildFormat: guildFormatPreference?.format,
+    guildFormatSetAt: guildFormatPreference?.setAt || undefined,
+    guildFormatSetBy: guildFormatPreference?.setBy
+      ? await resolveMemberLabel(message, guildFormatPreference.setBy)
+      : undefined,
     botDefault: deps.config.DEFAULT_TRANSLATION,
+    botDefaultFormat: deps.config.DEFAULT_TEXT_FORMAT,
     memberOverrideCount: deps.userTranslations.countForGuild(guildId),
+    memberFormatOverrideCount: deps.userFormats.countForGuild(guildId),
     citationsTotal: analytics.citationsTotal,
     citationsThisWeek: analytics.citationsThisWeek,
     topBooks: analytics.topBooks,
@@ -236,6 +287,61 @@ async function buildServerTranslationPreferenceEmbed(
   }
 }
 
+async function buildFormatPreferenceEmbed(
+  message: Message,
+  citation: ParsedFormatCitation,
+  deps: MessageHandlerDeps,
+): Promise<EmbedBuilder> {
+  const userId = message.author.id;
+  const botDefault = deps.config.DEFAULT_TEXT_FORMAT;
+  const guildFormat = getGuildFormat(message, deps);
+
+  switch (citation.action) {
+    case "show":
+      return buildFormatShowEmbed(
+        deps.userFormats.get(userId),
+        guildFormat,
+        botDefault,
+      );
+    case "set":
+      await deps.userFormats.set(userId, citation.format!, message.guild?.id);
+      return buildFormatSetEmbed(citation.format!);
+    case "reset":
+      await deps.userFormats.clear(userId);
+      return buildFormatResetEmbed(guildFormat, botDefault);
+  }
+}
+
+async function buildServerFormatPreferenceEmbed(
+  message: Message,
+  citation: ParsedServerFormatCitation,
+  deps: MessageHandlerDeps,
+): Promise<EmbedBuilder> {
+  const botDefault = deps.config.DEFAULT_TEXT_FORMAT;
+
+  if (!message.guild) {
+    return buildErrorEmbed(
+      "Server format preferences can only be viewed or changed in a server.",
+    );
+  }
+
+  const guildId = message.guild.id;
+  const guildFormat = deps.guildFormats.get(guildId);
+
+  if (citation.action === "show") {
+    return buildServerFormatShowEmbed(guildFormat, botDefault);
+  }
+
+  switch (citation.action) {
+    case "set":
+      await deps.guildFormats.set(guildId, citation.format!, message.author.id);
+      return buildServerFormatSetEmbed(citation.format!);
+    case "reset":
+      await deps.guildFormats.clear(guildId);
+      return buildServerFormatResetEmbed(botDefault);
+  }
+}
+
 async function appendBibleCitationUnit(
   message: Message,
   deps: MessageHandlerDeps,
@@ -243,6 +349,7 @@ async function appendBibleCitationUnit(
   bibleCitations: ParsedBibleCitation[],
   lookup: VerseLookup,
   defaultTranslation: Translation,
+  textFormat: TextFormat,
 ): Promise<void> {
   if (bibleCitations.length === 0) {
     return;
@@ -252,6 +359,8 @@ async function appendBibleCitationUnit(
     bibleCitations,
     lookup,
     defaultTranslation,
+    textFormat,
+    deps.poetryLayout,
   );
 
   if (result.embeds.length === 0) {
@@ -295,6 +404,7 @@ async function handleMessage(
   }
 
   const defaultTranslation = resolveDefaultTranslation(message, deps);
+  const defaultTextFormat = resolveDefaultTextFormat(message, deps);
   const units: CitationUnit[] = [];
   let pendingBibleCitations: ParsedBibleCitation[] = [];
 
@@ -311,13 +421,16 @@ async function handleMessage(
           pendingBibleCitations,
           deps.lookup,
           defaultTranslation,
+          defaultTextFormat,
         );
         pendingBibleCitations = [];
 
         switch (citation.kind) {
           case "help":
             units.push({
-              embeds: [buildHelpEmbed(defaultTranslation)],
+              embeds: [
+                buildHelpEmbed(defaultTranslation, defaultTextFormat),
+              ],
             });
             break;
           case "status":
@@ -357,6 +470,20 @@ async function handleMessage(
               ],
             });
             break;
+          case "format":
+            units.push({
+              embeds: [
+                await buildFormatPreferenceEmbed(message, citation, deps),
+              ],
+            });
+            break;
+          case "serverFormat":
+            units.push({
+              embeds: [
+                await buildServerFormatPreferenceEmbed(message, citation, deps),
+              ],
+            });
+            break;
           case "error":
             units.push({ embeds: [buildErrorEmbed(citation.message)] });
             break;
@@ -372,6 +499,7 @@ async function handleMessage(
     pendingBibleCitations,
     deps.lookup,
     defaultTranslation,
+    defaultTextFormat,
   );
 
   try {

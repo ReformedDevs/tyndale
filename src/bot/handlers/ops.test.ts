@@ -10,7 +10,7 @@ import {
 
 describe("formatHelpReply", () => {
   it("includes citation examples and bot commands", () => {
-    const reply = formatHelpReply("web");
+    const reply = formatHelpReply("web", "literary");
 
     expect(reply).toContain("**Tyndale** · help");
     expect(reply).toContain("`[Gen 1:1]`");
@@ -18,13 +18,15 @@ describe("formatHelpReply", () => {
     expect(reply).toContain("`[Tyndale help]`");
     expect(reply).toContain("`[Tyndale status]`");
     expect(reply).toContain("`[Tyndale translation asv]`");
+    expect(reply).toContain("`[Tyndale format verse]`");
     expect(reply).toContain("WEB, ASV, YLT (bot default: WEB)");
+    expect(reply).toContain("Literary, Paragraph, Verse (bot default: Literary)");
   });
 });
 
 describe("buildHelpEmbed", () => {
   it("wraps help text in a Tyndale embed", () => {
-    const embed = buildHelpEmbed("web").toJSON();
+    const embed = buildHelpEmbed("web", "literary").toJSON();
 
     expect(embed.color).toBe(0xb59b3c);
     expect(embed.description).toContain("**Tyndale** · help");
@@ -49,8 +51,13 @@ describe("buildServerStatusEmbed", () => {
       guildTranslation: "asv",
       guildDefaultSetAt: "2026-07-29T18:00:00.000Z",
       guildDefaultSetBy: "Charles",
+      guildFormat: "verse",
+      guildFormatSetAt: "2026-07-29T19:00:00.000Z",
+      guildFormatSetBy: "Charles",
       botDefault: "web",
+      botDefaultFormat: "literary",
       memberOverrideCount: 2,
+      memberFormatOverrideCount: 1,
       citationsTotal: 10,
       citationsThisWeek: 4,
       topBooks: [
@@ -63,7 +70,9 @@ describe("buildServerStatusEmbed", () => {
     expect(embed.description).toContain("*Server default translation:* ASV");
     expect(embed.description).toContain("*Set:*");
     expect(embed.description).toContain("by Charles");
-    expect(embed.description).toContain("*Personal overrides in this server:* 2");
+    expect(embed.description).toContain("*Server text layout:* Verse");
+    expect(embed.description).toContain("*Personal translation overrides:* 2");
+    expect(embed.description).toContain("*Personal layout overrides:* 1");
     expect(embed.description).toContain("*Citations this week:* 4");
     expect(embed.description).toContain("*Citations total:* 10");
     expect(embed.description).toContain("*Most cited:* Genesis (3), John (2)");
@@ -72,7 +81,9 @@ describe("buildServerStatusEmbed", () => {
   it("notes when the server uses the bot default", () => {
     const embed = buildServerStatusEmbed({
       botDefault: "web",
+      botDefaultFormat: "literary",
       memberOverrideCount: 0,
+      memberFormatOverrideCount: 0,
       citationsTotal: 0,
       citationsThisWeek: 0,
       topBooks: [],
@@ -80,6 +91,9 @@ describe("buildServerStatusEmbed", () => {
 
     expect(embed.description).toContain(
       "*Server default translation:* WEB (bot default)",
+    );
+    expect(embed.description).toContain(
+      "*Server text layout:* Literary (bot default)",
     );
     expect(embed.description).toContain("*Most cited:* none yet");
   });

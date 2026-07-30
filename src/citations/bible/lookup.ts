@@ -15,6 +15,11 @@ export function normalizeTranslation(value: string): Translation | undefined {
   return isTranslation(normalized) ? normalized : undefined;
 }
 
+/** YLT is traditionally printed with one verse per line; match that in literary mode. */
+export function usesVersePerLineProse(translation: Translation): boolean {
+  return translation === "ylt";
+}
+
 export type VerseIndex = Record<string, string>;
 type ChapterVerseCounts = Record<string, number>;
 

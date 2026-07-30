@@ -129,6 +129,52 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses format preference commands", () => {
+    expect(parseBracketCitation("[Tyndale format]")).toEqual({
+      kind: "format",
+      raw: "[Tyndale format]",
+      action: "show",
+    });
+    expect(parseBracketCitation("[Tyndale format verse]")).toEqual({
+      kind: "format",
+      raw: "[Tyndale format verse]",
+      action: "set",
+      format: "verse",
+    });
+    expect(parseBracketCitation("[Tyndale format reset]")).toEqual({
+      kind: "format",
+      raw: "[Tyndale format reset]",
+      action: "reset",
+    });
+  });
+
+  it("parses server format preference commands", () => {
+    expect(parseBracketCitation("[Tyndale server format]")).toEqual({
+      kind: "serverFormat",
+      raw: "[Tyndale server format]",
+      action: "show",
+    });
+    expect(parseBracketCitation("[Tyndale server format paragraph]")).toEqual({
+      kind: "serverFormat",
+      raw: "[Tyndale server format paragraph]",
+      action: "set",
+      format: "paragraph",
+    });
+    expect(parseBracketCitation("[Tyndale server format reset]")).toEqual({
+      kind: "serverFormat",
+      raw: "[Tyndale server format reset]",
+      action: "reset",
+    });
+  });
+
+  it("returns an error for unknown format preferences", () => {
+    const result = parseBracketCitation("[Tyndale format block]");
+    expect(result).toMatchObject({
+      kind: "error",
+      message: expect.stringContaining("Unknown format"),
+    });
+  });
+
   it("ignores bracket text that is not a citation attempt", () => {
     expect(parseBracketCitation("[hello world]")).toEqual({
       kind: "ignored",
