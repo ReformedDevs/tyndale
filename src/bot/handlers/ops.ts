@@ -69,6 +69,7 @@ export function formatHelpReply(
     "• `/devotional setup` — schedule morning and evening Spurgeon readings",
     "• `/devotional show` — show this server's devotional schedule",
     "• `/devotional clear` — disable scheduled devotionals",
+    "• `/person` — look up a reformer, Puritan, or martyr from the church history index",
     "• `[WCF 1.1]` — Westminster Confession paragraph",
     "• `[WCF 1]`, `[WCF 1.end]`, `[WCF 1.2-end]` — whole chapter or through chapter end",
     "• `[LBCF 26.2]` — 1689 London Baptist Confession paragraph",

@@ -1,0 +1,116 @@
+[
+  {
+    "id": "william-tyndale",
+    "name": "William Tyndale",
+    "aliases": ["Tyndale", "William Tyndale"],
+    "wikipediaTitle": "William Tyndale"
+  },
+  {
+    "id": "martin-luther",
+    "name": "Martin Luther",
+    "aliases": ["Luther"],
+    "wikipediaTitle": "Martin Luther"
+  },
+  {
+    "id": "john-calvin",
+    "name": "John Calvin",
+    "aliases": ["Calvin"],
+    "wikipediaTitle": "John Calvin"
+  },
+  {
+    "id": "ulrich-zwingli",
+    "name": "Ulrich Zwingli",
+    "aliases": ["Zwingli"],
+    "wikipediaTitle": "Huldrych Zwingli"
+  },
+  {
+    "id": "john-knox",
+    "name": "John Knox",
+    "aliases": ["Knox"],
+    "wikipediaTitle": "John Knox"
+  },
+  {
+    "id": "thomas-cranmer",
+    "name": "Thomas Cranmer",
+    "aliases": ["Cranmer"],
+    "wikipediaTitle": "Thomas Cranmer"
+  },
+  {
+    "id": "hugh-latimer",
+    "name": "Hugh Latimer",
+    "aliases": ["Latimer"],
+    "wikipediaTitle": "Hugh Latimer"
+  },
+  {
+    "id": "nicholas-ridley",
+    "name": "Nicholas Ridley",
+    "aliases": ["Ridley"],
+    "wikipediaTitle": "Nicholas Ridley (bishop)"
+  },
+  {
+    "id": "philip-melanchthon",
+    "name": "Philip Melanchthon",
+    "aliases": ["Melanchthon"],
+    "wikipediaTitle": "Philip Melanchthon"
+  },
+  {
+    "id": "martin-bucer",
+    "name": "Martin Bucer",
+    "aliases": ["Bucer"],
+    "wikipediaTitle": "Martin Bucer"
+  },
+  {
+    "id": "heinrich-bullinger",
+    "name": "Heinrich Bullinger",
+    "aliases": ["Bullinger"],
+    "wikipediaTitle": "Heinrich Bullinger"
+  },
+  {
+    "id": "theodore-beza",
+    "name": "Theodore Beza",
+    "aliases": ["Beza", "Theodore de Beze"],
+    "wikipediaTitle": "Theodore Beza"
+  },
+  {
+    "id": "peter-martyr-vermigli",
+    "name": "Peter Martyr Vermigli",
+    "aliases": ["Peter Martyr", "Vermigli", "Pietro Martire Vermigli"],
+    "wikipediaTitle": "Pietro Martire Vermigli"
+  },
+  {
+    "id": "william-farel",
+    "name": "William Farel",
+    "aliases": ["Farel", "Guillaume Farel"],
+    "wikipediaTitle": "William Farel"
+  },
+  {
+    "id": "miles-coverdale",
+    "name": "Myles Coverdale",
+    "aliases": ["Coverdale", "Miles Coverdale"],
+    "wikipediaTitle": "Myles Coverdale"
+  },
+  {
+    "id": "john-wycliffe",
+    "name": "John Wycliffe",
+    "aliases": ["Wycliffe", "Wyclif", "John Wyclif"],
+    "wikipediaTitle": "John Wycliffe"
+  },
+  {
+    "id": "jan-hus",
+    "name": "Jan Hus",
+    "aliases": ["Hus", "John Huss", "Huss"],
+    "wikipediaTitle": "Jan Hus"
+  },
+  {
+    "id": "jerome-of-prague",
+    "name": "Jerome of Prague",
+    "aliases": ["Jerome of Prague", "Jerome"],
+    "wikipediaTitle": "Jerome of Prague"
+  },
+  {
+    "id": "menno-simons",
+    "name": "Menno Simons",
+    "aliases": ["Menno"],
+    "wikipediaTitle": "Menno Simons"
+  }
+]

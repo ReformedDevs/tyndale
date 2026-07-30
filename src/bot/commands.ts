@@ -113,9 +113,21 @@ export const devotionalCommand = new SlashCommandBuilder()
       .setDescription("Disable morning and evening devotionals for this server"),
   );
 
+export const personCommand = new SlashCommandBuilder()
+  .setName("person")
+  .setDescription("Look up a reformer, Puritan, or martyr from the church history index")
+  .addStringOption((option) =>
+    option
+      .setName("query")
+      .setDescription("Name to look up (e.g. William Tyndale, John Owen)")
+      .setRequired(true)
+      .setAutocomplete(true),
+  );
+
 export const SLASH_COMMANDS = [
   helpCommand,
   versionCommand,
   serverCommand,
   devotionalCommand,
+  personCommand,
 ];

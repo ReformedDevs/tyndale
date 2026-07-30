@@ -19,6 +19,7 @@ import { UserFormatStore } from "./preferences/user-formats.js";
 import { UserTranslationStore } from "./preferences/user-translations.js";
 import { SpurgeonDevotionalLookup } from "./devotionals/spurgeon-lookup.js";
 import { startDevotionalScheduler } from "./devotionals/scheduler.js";
+import { ChurchPeopleLookup } from "./people/lookup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "../data");
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
   const guildAnalytics = await GuildAnalyticsStore.load(guildAnalyticsPath);
   const guildDevotionals = await GuildDevotionalStore.load(guildDevotionalsPath);
   const spurgeonDevotionals = await SpurgeonDevotionalLookup.load(dataDir);
+  const churchPeople = await ChurchPeopleLookup.load(dataDir);
   const devotionalScheduler = {
     store: guildDevotionals,
     spurgeon: spurgeonDevotionals,
@@ -63,6 +65,7 @@ async function main(): Promise<void> {
     guildFormats,
     guildDevotionals,
     devotionalScheduler,
+    churchPeople,
   };
 
   registerMessageHandler(client, {

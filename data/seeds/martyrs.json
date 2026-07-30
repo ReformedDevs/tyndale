@@ -1,0 +1,110 @@
+[
+  {
+    "id": "polycarp",
+    "name": "Polycarp",
+    "aliases": ["Saint Polycarp", "St. Polycarp"],
+    "wikipediaTitle": "Polycarp"
+  },
+  {
+    "id": "ignatius-of-antioch",
+    "name": "Ignatius of Antioch",
+    "aliases": ["Ignatius", "Saint Ignatius of Antioch", "St. Ignatius of Antioch"],
+    "wikipediaTitle": "Ignatius of Antioch"
+  },
+  {
+    "id": "justin-martyr",
+    "name": "Justin Martyr",
+    "aliases": ["Justin", "Saint Justin Martyr", "St. Justin Martyr"],
+    "wikipediaTitle": "Justin Martyr"
+  },
+  {
+    "id": "perpetua",
+    "name": "Perpetua",
+    "aliases": ["Perpetua and Felicity", "Felicitas and Perpetua", "Sts. Felicitas and Perpetua"],
+    "wikipediaTitle": "Perpetua and Felicity"
+  },
+  {
+    "id": "william-tyndale",
+    "name": "William Tyndale",
+    "aliases": ["Tyndale"],
+    "wikipediaTitle": "William Tyndale"
+  },
+  {
+    "id": "jan-hus",
+    "name": "Jan Hus",
+    "aliases": ["Hus", "John Huss", "Huss"],
+    "wikipediaTitle": "Jan Hus"
+  },
+  {
+    "id": "jerome-of-prague",
+    "name": "Jerome of Prague",
+    "aliases": ["Jerome"],
+    "wikipediaTitle": "Jerome of Prague"
+  },
+  {
+    "id": "john-rogers",
+    "name": "John Rogers",
+    "aliases": ["Rogers"],
+    "wikipediaTitle": "John Rogers (Bible editor and martyr)"
+  },
+  {
+    "id": "john-bradford",
+    "name": "John Bradford",
+    "aliases": ["Bradford"],
+    "wikipediaTitle": "John Bradford"
+  },
+  {
+    "id": "john-hooper",
+    "name": "John Hooper",
+    "aliases": ["Hooper"],
+    "wikipediaTitle": "John Hooper (bishop)"
+  },
+  {
+    "id": "hugh-latimer",
+    "name": "Hugh Latimer",
+    "aliases": ["Latimer"],
+    "wikipediaTitle": "Hugh Latimer"
+  },
+  {
+    "id": "nicholas-ridley",
+    "name": "Nicholas Ridley",
+    "aliases": ["Ridley"],
+    "wikipediaTitle": "Nicholas Ridley (bishop)"
+  },
+  {
+    "id": "thomas-cranmer",
+    "name": "Thomas Cranmer",
+    "aliases": ["Cranmer"],
+    "wikipediaTitle": "Thomas Cranmer"
+  },
+  {
+    "id": "lawrence-saunders",
+    "name": "Lawrence Saunders",
+    "aliases": ["Saunders"],
+    "wikipediaTitle": "Laurence Saunders"
+  },
+  {
+    "id": "rowland-taylor",
+    "name": "Rowland Taylor",
+    "aliases": ["Taylor", "Roland Taylor"],
+    "wikipediaTitle": "Rowland Taylor"
+  },
+  {
+    "id": "anne-askew",
+    "name": "Anne Askew",
+    "aliases": ["Askew", "Anne Ayscough"],
+    "wikipediaTitle": "Anne Askew"
+  },
+  {
+    "id": "james-renwick",
+    "name": "James Renwick",
+    "aliases": ["Renwick"],
+    "wikipediaTitle": "James Renwick (Covenanter)"
+  },
+  {
+    "id": "donald-cargill",
+    "name": "Donald Cargill",
+    "aliases": ["Cargill"],
+    "wikipediaTitle": "Donald Cargill"
+  }
+]

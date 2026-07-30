@@ -21,6 +21,11 @@ import {
   handleDevotionalCommand,
 } from "./devotional-commands.js";
 import {
+  handlePersonAutocomplete,
+  handlePersonCommand,
+} from "./person-commands.js";
+import type { ChurchPeopleLookup } from "../../people/lookup.js";
+import {
   handleServerVersionCommand,
   handleVersionCommand,
 } from "./version-commands.js";
@@ -34,6 +39,7 @@ export interface InteractionHandlerDeps {
   guildFormats: GuildFormatStore;
   guildDevotionals: GuildDevotionalStore;
   devotionalScheduler: DevotionalSchedulerDeps;
+  churchPeople: ChurchPeopleLookup;
 }
 
 export function registerInteractionHandler(
@@ -52,6 +58,11 @@ async function handleInteraction(
   if (interaction.isAutocomplete()) {
     if (interaction.commandName === "devotional") {
       await handleDevotionalAutocomplete(interaction);
+      return;
+    }
+
+    if (interaction.commandName === "person") {
+      await handlePersonAutocomplete(interaction, deps);
     }
     return;
   }
@@ -75,6 +86,9 @@ async function handleInteraction(
         break;
       case "devotional":
         await handleDevotionalCommand(interaction, deps);
+        break;
+      case "person":
+        await handlePersonCommand(interaction, deps);
         break;
     }
   } catch (error) {
