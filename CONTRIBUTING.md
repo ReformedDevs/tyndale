@@ -29,9 +29,11 @@ If you have an older checkout with files under `data/`, `sync-content` migrates 
 ## Deploy workflow
 
 ```bash
-npm run sync-content    # diff registry vs content; fetch only new/changed
+npm run sync-content    # reads CONTENT_DIR from .env; fetch only new/changed
 npm start
 ```
+
+On production, run sync from the repo checkout so it picks up `/opt/tyndale/.env`.
 
 Use `sync-content --full` (alias: `npm run build-data`) to rebuild everything locally. Use `--prune` to remove built files for registry entries that were deleted.
 

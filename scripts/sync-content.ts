@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { syncContent } from "../src/content/sync/index.js";
 
 const full =
