@@ -82,16 +82,11 @@ Edit [`registry/confessions.json`](registry/confessions.json):
   "id": "wcf",
   "name": "Westminster Confession of Faith",
   "abbrev": "WCF",
-  "source": "ccel:westminster3"
+  "source": "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds/westminster_confession_of_faith.json"
 }
 ```
 
-Confession sources use the `ccel:` prefix for [Christian Classics Ethereal Library](https://www.ccel.org/) texts:
-
-- `ccel:westminster3` — Westminster Confession (CCEL westminster3 reader). Sync maps CCEL pages to standard 1646 chapter numbers (1–33) and uses Creeds.json for chapter 24 (marriage), since CCEL’s PCUSA edition replaces that chapter.
-- `ccel:lbcf` — 1689 London Baptist Confession (`creeds/bcf/bcfc*.htm`)
-
-Legacy Creeds.json URLs (`https://…/*.json`) are still supported if needed.
+Source files use the [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) schema.
 
 ## Add a devotional
 
