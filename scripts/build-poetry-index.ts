@@ -19,11 +19,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const dataDir = path.join(rootDir, "data");
 
-const USFM_SOURCES = {
+/** ebible.org USFM zips used for literary layout (paragraph/poetry structure). */
+const USFM_SOURCES: Partial<Record<Translation, string>> = {
   web: "https://ebible.org/Scriptures/engwebp_usfm.zip",
   asv: "https://ebible.org/Scriptures/eng-asv_usfm.zip",
   ylt: "https://ebible.org/Scriptures/engylt_usfm.zip",
-} as const satisfies Record<Translation, string>;
+  kjv: "https://ebible.org/Scriptures/eng-kjv2006_usfm.zip",
+  geneva: "https://ebible.org/Scriptures/enggnv_usfm.zip",
+  tyndale: "https://ebible.org/Scriptures/engtnt_usfm.zip",
+  wyc: "https://ebible.org/Scriptures/engwyc2018_usfm.zip",
+};
 
 async function fetchToFile(url: string, filePath: string): Promise<void> {
   const response = await fetch(url);
@@ -50,6 +55,7 @@ async function buildPoetryIndexFromZip(
 
   const files = (await readdir(extractDir)).filter((name) => name.endsWith(".usfm"));
   const indexes: PoetryLayoutIndex[] = [];
+  const skippedFiles: string[] = [];
 
   for (const fileName of files) {
     const content = await readFile(path.join(extractDir, fileName), "utf8");
@@ -57,11 +63,18 @@ async function buildPoetryIndexFromZip(
     const book = idMatch ? usfmIdToBookSlug(idMatch[1] ?? "") : undefined;
 
     if (!book) {
+      skippedFiles.push(fileName);
       continue;
     }
 
     console.info(`Parsing ${translation.toUpperCase()} ${fileName} (${book})...`);
     indexes.push(parseUsfmFile(content));
+  }
+
+  if (skippedFiles.length > 0) {
+    console.info(
+      `Skipped ${skippedFiles.length} unsupported USFM file(s) for ${translation.toUpperCase()}`,
+    );
   }
 
   return mergePoetryIndexes(indexes);

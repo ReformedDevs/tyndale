@@ -122,10 +122,18 @@ describe("parseBracketCitation", () => {
   });
 
   it("returns an error for unknown translation preferences", () => {
-    const result = parseBracketCitation("[Tyndale translation kjv]");
+    const result = parseBracketCitation("[Tyndale translation niv]");
     expect(result).toMatchObject({
       kind: "error",
       message: expect.stringContaining("Unknown translation"),
+    });
+  });
+
+  it("parses KJV translation prefix on citations", () => {
+    expect(parseBracketCitation("[kjv gen 1:1]")).toMatchObject({
+      kind: "bible",
+      translation: "kjv",
+      book: "gen",
     });
   });
 

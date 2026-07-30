@@ -7,17 +7,33 @@ import {
   verseKey,
   type BookSlug,
 } from "../src/citations/bible/books.js";
-import type { Translation, VerseIndex } from "../src/citations/bible/lookup.js";
+import {
+  TRANSLATIONS,
+  type Translation,
+  type VerseIndex,
+} from "../src/citations/bible/lookup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const dataDir = path.join(rootDir, "data");
 
-const SOURCES = {
-  web: "https://raw.githubusercontent.com/ringletech/webu-open-bible/main/json/complete-bible.json",
-  asv: "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/ASV.json",
-  ylt: "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/YLT.json",
-} as const satisfies Record<Translation, string>;
+const SCROLLMAPPER_BASE =
+  "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json";
+
+const SCROLLMAPPER_SOURCES = {
+  asv: "ASV.json",
+  ylt: "YLT.json",
+  kjv: "KJV.json",
+  geneva: "Geneva1599.json",
+  tyndale: "Tyndale.json",
+  wyc: "Wycliffe.json",
+} as const satisfies Record<
+  Exclude<Translation, "web">,
+  string
+>;
+
+const WEB_SOURCE =
+  "https://raw.githubusercontent.com/ringletech/webu-open-bible/main/json/complete-bible.json";
 
 interface WebVerseRow {
   book: string;
@@ -59,20 +75,23 @@ function addVerse(
   chapter: number,
   verse: number,
   text: string,
-): void {
+): boolean {
   const slug = bookNameToSlug(bookName);
   if (!slug) {
-    throw new Error(`Unknown book name: ${bookName}`);
+    return false;
   }
 
   index[verseKey(slug, chapter, verse)] = text.trim();
+  return true;
 }
 
 function buildWebIndex(rows: WebVerseRow[]): VerseIndex {
   const index: VerseIndex = {};
 
   for (const row of rows) {
-    addVerse(index, row.book, row.chapter, row.verse, row.text);
+    if (!addVerse(index, row.book, row.chapter, row.verse, row.text)) {
+      throw new Error(`Unknown book name: ${row.book}`);
+    }
   }
 
   return index;
@@ -80,13 +99,30 @@ function buildWebIndex(rows: WebVerseRow[]): VerseIndex {
 
 function buildScrollmapperIndex(bible: ScrollmapperBible): VerseIndex {
   const index: VerseIndex = {};
+  const skippedBooks = new Set<string>();
 
   for (const book of bible.books) {
     for (const chapter of book.chapters) {
       for (const verse of chapter.verses) {
-        addVerse(index, book.name, chapter.chapter, verse.verse, verse.text);
+        if (
+          !addVerse(
+            index,
+            book.name,
+            chapter.chapter,
+            verse.verse,
+            verse.text,
+          )
+        ) {
+          skippedBooks.add(book.name);
+        }
       }
     }
+  }
+
+  if (skippedBooks.size > 0) {
+    console.info(
+      `Skipped ${skippedBooks.size} unsupported book(s): ${[...skippedBooks].sort().join(", ")}`,
+    );
   }
 
   return index;
@@ -109,20 +145,22 @@ async function main(): Promise<void> {
   await mkdir(dataDir, { recursive: true });
 
   console.info("Fetching WEB...");
-  const webRows = await fetchJson<WebVerseRow[]>(SOURCES.web);
+  const webRows = await fetchJson<WebVerseRow[]>(WEB_SOURCE);
   await writeIndex("web", buildWebIndex(webRows));
 
-  console.info("Fetching ASV...");
-  const asvBible = await fetchJson<ScrollmapperBible>(SOURCES.asv);
-  await writeIndex("asv", buildScrollmapperIndex(asvBible));
+  for (const [translation, fileName] of Object.entries(SCROLLMAPPER_SOURCES)) {
+    console.info(`Fetching ${translation.toUpperCase()}...`);
+    const bible = await fetchJson<ScrollmapperBible>(
+      `${SCROLLMAPPER_BASE}/${fileName}`,
+    );
+    await writeIndex(
+      translation as Exclude<Translation, "web">,
+      buildScrollmapperIndex(bible),
+    );
+  }
 
-  console.info("Fetching YLT...");
-  const yltBible = await fetchJson<ScrollmapperBible>(SOURCES.ylt);
-  await writeIndex("ylt", buildScrollmapperIndex(yltBible));
-
-  // Sanity check: Genesis 1:1 exists in all translations
   const sanityBook: BookSlug = "gen";
-  for (const translation of ["web", "asv", "ylt"] as const) {
+  for (const translation of TRANSLATIONS) {
     const filePath = path.join(dataDir, `${translation}.json`);
     const index = JSON.parse(await readFile(filePath, "utf8")) as VerseIndex;
     const key = verseKey(sanityBook, 1, 1);

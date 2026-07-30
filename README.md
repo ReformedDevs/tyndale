@@ -2,7 +2,7 @@
 
 A Discord bot that responds to bracket Bible citations in messages — like `[Gen 1:1]` — with verse text from public-domain translations.
 
-Supported translations: **WEB** (default), **ASV**, and **YLT**.
+Supported translations: **WEB** (default), **ASV**, **YLT**, **KJV**, **Geneva**, **Tyndale**, and **WYC** (Wycliffe).
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ Supported translations: **WEB** (default), **ASV**, and **YLT**.
 git clone <repo-url>
 cd tyndale
 npm install
-npm run build-data   # downloads WEB/ASV/YLT and writes data/*.json
+npm run build-data   # downloads verse indexes and USFM layout data
 cp .env.example .env
 ```
 
@@ -54,7 +54,7 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Verse range | `[Gen 1:1-3]` |
 | Multiple verses | `[Gen 1:1,3,5]` |
 | Full book name | `[Genesis 1:1]` |
-| Translation prefix | `[ASV Gen 1:1]`, `[YLT John 3:16]` |
+| Translation prefix | `[ASV Gen 1:1]`, `[KJV John 3:16]`, `[Tyndale Gen 1:1]` |
 | Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
 | Bot help | `[Tyndale help]` |
 | Bot status | `[Tyndale status]` |
@@ -72,7 +72,7 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Set server text layout | `[Tyndale server format verse]` |
 | Reset server text layout | `[Tyndale server format reset]` |
 
-The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. Default text layout priority is the same: your setting → server setting → `DEFAULT_TEXT_FORMAT` env (`literary`, `paragraph`, or `verse`). **Literary** uses each translation's own USFM layout when index files are present: poetry line breaks and indents where marked, prose paragraph groupings where `\p` markers exist (WEB, ASV). YLT uses verse-per-line prose in literary mode, matching how it is typically printed. **Paragraph** always joins verses together. **Verse** always puts each verse on its own line.
+The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. Default text layout priority is the same: your setting → server setting → `DEFAULT_TEXT_FORMAT` env (`literary`, `paragraph`, or `verse`). **Literary** uses each translation's own USFM layout when index files are present: poetry line breaks and indents where marked, prose paragraph groupings where `\p` markers exist. YLT uses verse-per-line prose in literary mode. Tyndale USFM covers the New Testament only; WYC layout comes from a modern-spelling Wycliffe USFM (structure may not match the Middle English verse text exactly). **Paragraph** always joins verses together. **Verse** always puts each verse on its own line.
 
 ## Scripts
 
@@ -93,6 +93,12 @@ Tyndale uses public-domain Bible texts:
 - **WEB** — [World English Bible Updated (WEBU)](https://github.com/ringletech/webu-open-bible), CC0
 - **ASV** — American Standard Version (1901), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
 - **YLT** — Young's Literal Translation (1898), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
+- **KJV** — King James Version (1769), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
+- **Geneva** — Geneva Bible (1599), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
+- **Tyndale** — Tyndale Bible (1526/1531), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases)
+- **WYC** — Wycliffe Bible (1388), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases). Apocryphal/deuterocanonical books in the source are omitted.
+
+Literary layout structure (paragraph and poetry markers) is parsed from [ebible.org](https://ebible.org/) USFM for WEB, ASV, YLT, KJV, Geneva, Tyndale (NT), and WYC (modern-spelling edition).
 
 ## Health checks
 

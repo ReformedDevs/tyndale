@@ -19,7 +19,8 @@ describe("formatHelpReply", () => {
     expect(reply).toContain("`[Tyndale status]`");
     expect(reply).toContain("`[Tyndale translation asv]`");
     expect(reply).toContain("`[Tyndale format verse]`");
-    expect(reply).toContain("WEB, ASV, YLT (bot default: WEB)");
+    expect(reply).toContain("KJV");
+    expect(reply).toContain("(bot default: WEB)");
     expect(reply).toContain("Literary, Paragraph, Verse (bot default: Literary)");
   });
 });

@@ -3,7 +3,15 @@ import path from "node:path";
 
 import { verseKey, type BookSlug } from "./books.js";
 
-export const TRANSLATIONS = ["web", "asv", "ylt"] as const;
+export const TRANSLATIONS = [
+  "web",
+  "asv",
+  "ylt",
+  "kjv",
+  "geneva",
+  "tyndale",
+  "wyc",
+] as const;
 export type Translation = (typeof TRANSLATIONS)[number];
 
 export function isTranslation(value: string): value is Translation {
@@ -13,6 +21,12 @@ export function isTranslation(value: string): value is Translation {
 export function normalizeTranslation(value: string): Translation | undefined {
   const normalized = value.toLowerCase();
   return isTranslation(normalized) ? normalized : undefined;
+}
+
+export function formatTranslationCodes(): string {
+  return TRANSLATIONS.map((translation) => translation.toUpperCase()).join(
+    ", ",
+  );
 }
 
 /** YLT is traditionally printed with one verse per line; match that in literary mode. */
@@ -62,16 +76,20 @@ export class VerseLookup {
     return new VerseLookup(indexes, chapterVerseCounts);
   }
 
-  static fromIndexes(indexes: Record<Translation, VerseIndex>): VerseLookup {
+  static fromIndexes(
+    indexes: Partial<Record<Translation, VerseIndex>>,
+  ): VerseLookup {
+    const fullIndexes = {} as Record<Translation, VerseIndex>;
     const chapterVerseCounts = {} as Record<Translation, ChapterVerseCounts>;
 
     for (const translation of TRANSLATIONS) {
+      fullIndexes[translation] = indexes[translation] ?? {};
       chapterVerseCounts[translation] = buildChapterVerseCounts(
-        indexes[translation],
+        fullIndexes[translation],
       );
     }
 
-    return new VerseLookup(indexes, chapterVerseCounts);
+    return new VerseLookup(fullIndexes, chapterVerseCounts);
   }
 
   getChapterVerseCount(

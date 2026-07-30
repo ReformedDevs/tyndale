@@ -1,5 +1,5 @@
 import { BOOKS, type BookSlug } from "./books.js";
-import { normalizeTranslation, type Translation } from "./lookup.js";
+import { normalizeTranslation, formatTranslationCodes, type Translation } from "./lookup.js";
 import { normalizeTextFormat } from "./text-format.js";
 import type {
   ParsedCitation,
@@ -163,7 +163,7 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     if (!translation) {
       return errorCitation(
         raw,
-        `Unknown translation "${value}". Use WEB, ASV, or YLT.`,
+        `Unknown translation "${value}". Use ${formatTranslationCodes()}.`,
       );
     }
 
@@ -191,7 +191,7 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     if (!translation) {
       return errorCitation(
         raw,
-        `Unknown translation "${value}". Use WEB, ASV, or YLT.`,
+        `Unknown translation "${value}". Use ${formatTranslationCodes()}.`,
       );
     }
 

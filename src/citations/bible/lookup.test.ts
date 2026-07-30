@@ -41,7 +41,8 @@ describe("VerseLookup", () => {
 
   it("identifies supported translations", () => {
     expect(lookup.hasTranslation("web")).toBe(true);
-    expect(lookup.hasTranslation("kjv")).toBe(false);
+    expect(lookup.hasTranslation("kjv")).toBe(true);
+    expect(lookup.hasTranslation("niv")).toBe(false);
   });
 
   it("returns chapter verse counts", () => {
@@ -59,7 +60,9 @@ describe("isTranslation", () => {
   it("accepts translation codes case-insensitively", () => {
     expect(isTranslation("WEB")).toBe(true);
     expect(isTranslation("Asv")).toBe(true);
+    expect(isTranslation("kjv")).toBe(true);
     expect(normalizeTranslation("YLT")).toBe("ylt");
-    expect(isTranslation("kjv")).toBe(false);
+    expect(normalizeTranslation("Geneva")).toBe("geneva");
+    expect(isTranslation("niv")).toBe(false);
   });
 });

@@ -59,7 +59,7 @@ describe("UserTranslationStore", () => {
 
     const invalid = JSON.stringify({
       "user-1": "web",
-      "user-2": "kjv",
+      "user-2": "niv",
       "user-3": 123,
     });
     const { writeFile } = await import("node:fs/promises");
