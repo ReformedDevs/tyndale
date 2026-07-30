@@ -12,10 +12,13 @@ import { ConfessionLookup } from "./citations/confessions/lookup.js";
 import { PoetryLayoutLookup } from "./citations/bible/poetry-layout.js";
 import { loadConfig } from "./config.js";
 import { GuildAnalyticsStore } from "./preferences/guild-analytics.js";
+import { GuildDevotionalStore } from "./preferences/guild-devotionals.js";
 import { GuildFormatStore } from "./preferences/guild-formats.js";
 import { GuildTranslationStore } from "./preferences/guild-translations.js";
 import { UserFormatStore } from "./preferences/user-formats.js";
 import { UserTranslationStore } from "./preferences/user-translations.js";
+import { SpurgeonDevotionalLookup } from "./devotionals/spurgeon-lookup.js";
+import { startDevotionalScheduler } from "./devotionals/scheduler.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.resolve(__dirname, "../data");
@@ -24,6 +27,7 @@ const guildTranslationsPath = path.join(dataDir, "guild-translations.json");
 const userFormatsPath = path.join(dataDir, "user-formats.json");
 const guildFormatsPath = path.join(dataDir, "guild-formats.json");
 const guildAnalyticsPath = path.join(dataDir, "guild-analytics.json");
+const guildDevotionalsPath = path.join(dataDir, "guild-devotionals.json");
 
 async function main(): Promise<void> {
   const config = loadConfig();
@@ -37,6 +41,17 @@ async function main(): Promise<void> {
   const userFormats = await UserFormatStore.load(userFormatsPath);
   const guildFormats = await GuildFormatStore.load(guildFormatsPath);
   const guildAnalytics = await GuildAnalyticsStore.load(guildAnalyticsPath);
+  const guildDevotionals = await GuildDevotionalStore.load(guildDevotionalsPath);
+  const spurgeonDevotionals = await SpurgeonDevotionalLookup.load(dataDir);
+  const devotionalScheduler = {
+    store: guildDevotionals,
+    spurgeon: spurgeonDevotionals,
+    lookup,
+    poetryLayout,
+    config,
+    guildTranslations,
+    guildFormats,
+  };
   const startedAt = Date.now();
 
   const client = createBotClient(config);
@@ -46,6 +61,8 @@ async function main(): Promise<void> {
     guildTranslations,
     userFormats,
     guildFormats,
+    guildDevotionals,
+    devotionalScheduler,
   };
 
   registerMessageHandler(client, {
@@ -57,6 +74,8 @@ async function main(): Promise<void> {
     startedAt,
   });
   registerInteractionHandler(client, preferenceDeps);
+
+  startDevotionalScheduler(client, devotionalScheduler);
 
   await client.login(config.DISCORD_BOT_TOKEN);
   await registerSlashCommands(client, config);

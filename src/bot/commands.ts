@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { ChannelType, SlashCommandBuilder } from "discord.js";
 
 import { TRANSLATIONS } from "../citations/bible/lookup.js";
 
@@ -66,4 +66,56 @@ export const serverCommand = new SlashCommandBuilder()
       ),
   );
 
-export const SLASH_COMMANDS = [helpCommand, versionCommand, serverCommand];
+export const devotionalCommand = new SlashCommandBuilder()
+  .setName("devotional")
+  .setDescription("Morning and evening Spurgeon devotionals")
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("setup")
+      .setDescription(
+        "Set channel, morning time, evening time, and timezone together",
+      )
+      .addChannelOption((option) =>
+        option
+          .setName("channel")
+          .setDescription("Channel for morning and evening readings")
+          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+          .setRequired(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("morning")
+          .setDescription("Morning post time (e.g. 6:30 am)")
+          .setRequired(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("evening")
+          .setDescription("Evening post time (e.g. 6:00 pm)")
+          .setRequired(true),
+      )
+      .addStringOption((option) =>
+        option
+          .setName("timezone")
+          .setDescription("IANA timezone (e.g. America/Chicago)")
+          .setRequired(true)
+          .setAutocomplete(true),
+      ),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("show")
+      .setDescription("Show this server's devotional schedule"),
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("clear")
+      .setDescription("Disable morning and evening devotionals for this server"),
+  );
+
+export const SLASH_COMMANDS = [
+  helpCommand,
+  versionCommand,
+  serverCommand,
+  devotionalCommand,
+];

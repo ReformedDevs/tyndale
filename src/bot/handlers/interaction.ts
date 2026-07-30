@@ -7,6 +7,8 @@ import {
 
 import type { Config } from "../../config.js";
 import type { GuildFormatStore } from "../../preferences/guild-formats.js";
+import type { GuildDevotionalStore } from "../../preferences/guild-devotionals.js";
+import type { DevotionalSchedulerDeps } from "../../devotionals/scheduler.js";
 import type { GuildTranslationStore } from "../../preferences/guild-translations.js";
 import type { UserFormatStore } from "../../preferences/user-formats.js";
 import type { UserTranslationStore } from "../../preferences/user-translations.js";
@@ -14,6 +16,10 @@ import {
   resolveDefaultTextFormat,
   resolveDefaultTranslation,
 } from "../resolve-defaults.js";
+import {
+  handleDevotionalAutocomplete,
+  handleDevotionalCommand,
+} from "./devotional-commands.js";
 import {
   handleServerVersionCommand,
   handleVersionCommand,
@@ -26,6 +32,8 @@ export interface InteractionHandlerDeps {
   guildTranslations: GuildTranslationStore;
   userFormats: UserFormatStore;
   guildFormats: GuildFormatStore;
+  guildDevotionals: GuildDevotionalStore;
+  devotionalScheduler: DevotionalSchedulerDeps;
 }
 
 export function registerInteractionHandler(
@@ -41,6 +49,13 @@ async function handleInteraction(
   interaction: Interaction,
   deps: InteractionHandlerDeps,
 ): Promise<void> {
+  if (interaction.isAutocomplete()) {
+    if (interaction.commandName === "devotional") {
+      await handleDevotionalAutocomplete(interaction);
+    }
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) {
     return;
   }
@@ -57,6 +72,9 @@ async function handleInteraction(
         if (interaction.options.getSubcommandGroup() === "version") {
           await handleServerVersionCommand(interaction, deps);
         }
+        break;
+      case "devotional":
+        await handleDevotionalCommand(interaction, deps);
         break;
     }
   } catch (error) {
