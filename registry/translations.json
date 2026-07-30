@@ -1,0 +1,44 @@
+[
+  {
+    "id": "web",
+    "name": "World English Bible",
+    "source": "https://raw.githubusercontent.com/ringletech/webu-open-bible/main/json/complete-bible.json",
+    "poetrySource": "https://ebible.org/Scriptures/engwebp_usfm.zip"
+  },
+  {
+    "id": "asv",
+    "name": "American Standard Version",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/ASV.json",
+    "poetrySource": "https://ebible.org/Scriptures/eng-asv_usfm.zip"
+  },
+  {
+    "id": "ylt",
+    "name": "Young's Literal Translation",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/YLT.json",
+    "poetrySource": "https://ebible.org/Scriptures/engylt_usfm.zip"
+  },
+  {
+    "id": "kjv",
+    "name": "King James Version",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/KJV.json",
+    "poetrySource": "https://ebible.org/Scriptures/eng-kjv2006_usfm.zip"
+  },
+  {
+    "id": "geneva",
+    "name": "Geneva Bible",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/Geneva1599.json",
+    "poetrySource": "https://ebible.org/Scriptures/enggnv_usfm.zip"
+  },
+  {
+    "id": "tyndale",
+    "name": "Tyndale Bible",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/Tyndale.json",
+    "poetrySource": "https://ebible.org/Scriptures/engtnt_usfm.zip"
+  },
+  {
+    "id": "wyc",
+    "name": "Wycliffe Bible",
+    "source": "https://raw.githubusercontent.com/scrollmapper/bible_databases/master/formats/json/Wycliffe.json",
+    "poetrySource": "https://ebible.org/Scriptures/engwyc2018_usfm.zip"
+  }
+]

@@ -56,8 +56,8 @@ function normalizeEntry(
 export class SpurgeonDevotionalLookup {
   private constructor(private readonly entries: Record<string, SpurgeonDevotionalEntry>) {}
 
-  static async load(dataDir: string): Promise<SpurgeonDevotionalLookup> {
-    const filePath = path.join(dataDir, "spurgeon-morn-eve.json");
+  static async load(devotionalsDir: string): Promise<SpurgeonDevotionalLookup> {
+    const filePath = path.join(devotionalsDir, "spurgeon-morn-eve.json");
     const raw = await readFile(filePath, "utf8");
     const parsed = JSON.parse(raw) as SpurgeonIndexFile;
     const entries: Record<string, SpurgeonDevotionalEntry> = {};

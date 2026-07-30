@@ -1,16 +1,14 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import "dotenv/config";
 
 import { createBotClient } from "./bot/client.js";
+import { buildSlashCommands } from "./bot/commands.js";
 import { registerSlashCommands } from "./bot/register-commands.js";
 import { registerInteractionHandler } from "./bot/handlers/interaction.js";
 import { registerMessageHandler } from "./bot/handlers/message.js";
 import { VerseLookup } from "./citations/bible/lookup.js";
 import { ConfessionLookup } from "./citations/confessions/lookup.js";
 import { PoetryLayoutLookup } from "./citations/bible/poetry-layout.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, validateDefaultTranslation } from "./config.js";
 import { GuildAnalyticsStore } from "./preferences/guild-analytics.js";
 import { GuildDevotionalStore } from "./preferences/guild-devotionals.js";
 import { GuildFormatStore } from "./preferences/guild-formats.js";
@@ -20,31 +18,49 @@ import { UserTranslationStore } from "./preferences/user-translations.js";
 import { SpurgeonDevotionalLookup } from "./devotionals/spurgeon-lookup.js";
 import { startDevotionalScheduler } from "./devotionals/scheduler.js";
 import { ChurchPeopleLookup } from "./people/lookup.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.resolve(__dirname, "../data");
-const userTranslationsPath = path.join(dataDir, "user-translations.json");
-const guildTranslationsPath = path.join(dataDir, "guild-translations.json");
-const userFormatsPath = path.join(dataDir, "user-formats.json");
-const guildFormatsPath = path.join(dataDir, "guild-formats.json");
-const guildAnalyticsPath = path.join(dataDir, "guild-analytics.json");
-const guildDevotionalsPath = path.join(dataDir, "guild-devotionals.json");
+import {
+  contentPaths,
+  resolveContentDir,
+  resolveStateDir,
+  stateFile,
+} from "./paths.js";
+import { migrateLegacyStateFiles } from "./state/migrate.js";
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  const lookup = await VerseLookup.load(dataDir);
-  const confessionLookup = await ConfessionLookup.load(dataDir);
-  const poetryLayout = await PoetryLayoutLookup.load(dataDir);
-  const userTranslations = await UserTranslationStore.load(userTranslationsPath);
-  const guildTranslations = await GuildTranslationStore.load(
-    guildTranslationsPath,
+  const contentDir = resolveContentDir();
+  const stateDir = resolveStateDir();
+  const paths = contentPaths(contentDir);
+
+  await migrateLegacyStateFiles(stateDir);
+
+  const lookup = await VerseLookup.load(paths.bibles);
+  validateDefaultTranslation(config, lookup.availableTranslations());
+
+  const confessionLookup = await ConfessionLookup.load(paths.confessions);
+  const poetryLayout = await PoetryLayoutLookup.load(paths.poetry);
+  const userTranslations = await UserTranslationStore.load(
+    stateFile(stateDir, "user-translations.json"),
   );
-  const userFormats = await UserFormatStore.load(userFormatsPath);
-  const guildFormats = await GuildFormatStore.load(guildFormatsPath);
-  const guildAnalytics = await GuildAnalyticsStore.load(guildAnalyticsPath);
-  const guildDevotionals = await GuildDevotionalStore.load(guildDevotionalsPath);
-  const spurgeonDevotionals = await SpurgeonDevotionalLookup.load(dataDir);
-  const churchPeople = await ChurchPeopleLookup.load(dataDir);
+  const guildTranslations = await GuildTranslationStore.load(
+    stateFile(stateDir, "guild-translations.json"),
+  );
+  const userFormats = await UserFormatStore.load(
+    stateFile(stateDir, "user-formats.json"),
+  );
+  const guildFormats = await GuildFormatStore.load(
+    stateFile(stateDir, "guild-formats.json"),
+  );
+  const guildAnalytics = await GuildAnalyticsStore.load(
+    stateFile(stateDir, "guild-analytics.json"),
+  );
+  const guildDevotionals = await GuildDevotionalStore.load(
+    stateFile(stateDir, "guild-devotionals.json"),
+  );
+  const spurgeonDevotionals = await SpurgeonDevotionalLookup.load(
+    paths.devotionals,
+  );
+  const churchPeople = await ChurchPeopleLookup.load(paths.people);
   const devotionalScheduler = {
     store: guildDevotionals,
     spurgeon: spurgeonDevotionals,
@@ -81,7 +97,11 @@ async function main(): Promise<void> {
   startDevotionalScheduler(client, devotionalScheduler);
 
   await client.login(config.DISCORD_BOT_TOKEN);
-  await registerSlashCommands(client, config);
+  await registerSlashCommands(
+    client,
+    config,
+    buildSlashCommands(lookup.availableTranslations()),
+  );
 }
 
 main().catch((error: unknown) => {

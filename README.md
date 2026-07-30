@@ -2,12 +2,13 @@
 
 A Discord bot that responds to bracket Bible citations in messages — like `[Gen 1:1]` — with verse text from public-domain translations.
 
-Supported translations: **WEB** (default), **ASV**, **YLT**, **KJV**, **Geneva**, **Tyndale**, and **WYC** (Wycliffe).
+Supported translations: **WEB** (default), **ASV**, **YLT**, **KJV**, **Geneva**, **Tyndale**, and **WYC** (Wycliffe). The list is driven by [`registry/translations.json`](registry/translations.json) and whatever is synced into `content/bibles/`.
 
 ## Prerequisites
 
 - Node.js 20+
 - A [Discord application](https://discord.com/developers/applications) with a bot token
+- `unzip` on your PATH (for USFM poetry layout during content sync)
 
 ## Setup
 
@@ -15,7 +16,7 @@ Supported translations: **WEB** (default), **ASV**, **YLT**, **KJV**, **Geneva**
 git clone <repo-url>
 cd tyndale
 npm install
-npm run build-data   # downloads verse indexes and USFM layout data
+npm run sync-content -- --full   # first-time: download all content (alias: npm run build-data)
 cp .env.example .env
 ```
 
@@ -28,11 +29,38 @@ DEFAULT_TEXT_FORMAT=literary
 LOG_LEVEL=info
 ```
 
+Optional paths:
+
+```env
+# Built content (default: ./content)
+# CONTENT_DIR=/var/tyndale/content
+
+# Guild/user preferences (default: ~/.tyndale)
+# STATE_DIR=/var/tyndale
+```
+
 Start the bot:
 
 ```bash
 npm run dev
 ```
+
+## Content and state
+
+| Layer | Location | In git? |
+|-------|----------|---------|
+| Registry | `registry/*.json` | Yes — edit these to add translations, people, confessions |
+| Built content | `CONTENT_DIR` (default `./content/`) | No — produced by `npm run sync-content` |
+| Runtime state | `STATE_DIR` (default `~/.tyndale`) | No — user/guild preferences |
+
+Deploy sequence:
+
+```bash
+npm run sync-content    # incremental: only new/changed registry entries
+npm start
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for adding a person, translation, or confession.
 
 ## Discord application setup
 
@@ -71,6 +99,7 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Server text layout | `[Tyndale server format]` |
 | Set server text layout | `[Tyndale server format verse]` |
 | Reset server text layout | `[Tyndale server format reset]` |
+| Church history lookup | `/person`, `[Tyndale person William Tyndale]` |
 
 The bot ignores brackets that do not look like citation attempts (e.g. `[hello world]`). Book names, abbreviations, and translation codes are case-insensitive (`[gen 1:1]` and `[GEN 1:1]` both work). Default translation priority is: explicit prefix → your setting → server setting → bot env default. Default text layout priority is the same: your setting → server setting → `DEFAULT_TEXT_FORMAT` env (`literary`, `paragraph`, or `verse`). **Literary** uses each translation's own USFM layout when index files are present: poetry line breaks and indents where marked, prose paragraph groupings where `\p` markers exist. YLT uses verse-per-line prose in literary mode. Tyndale USFM covers the New Testament only; WYC layout comes from a modern-spelling Wycliffe USFM (structure may not match the Middle English verse text exactly). **Paragraph** always joins verses together. **Verse** always puts each verse on its own line.
 
@@ -79,7 +108,8 @@ The bot ignores brackets that do not look like citation attempts (e.g. `[hello w
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start the bot with hot reload |
-| `npm run build-data` | Download verse indexes and USFM layout for all books |
+| `npm run sync-content` | Sync registry → content (incremental) |
+| `npm run build-data` | Full content rebuild (`sync-content --full`) |
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm start` | Run compiled bot |
 | `npm test` | Run tests |

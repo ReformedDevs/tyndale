@@ -1,10 +1,19 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import type { ConfessionLocation } from "../types.js";
 
-export const CONFESSIONS = ["wcf", "lbcf"] as const;
-export type Confession = (typeof CONFESSIONS)[number];
+let runtimeConfessions: readonly string[] = [];
+
+export function setRuntimeConfessions(ids: readonly string[]): void {
+  runtimeConfessions = [...ids].map((id) => id.toLowerCase()).sort();
+}
+
+export function getRuntimeConfessions(): readonly string[] {
+  return runtimeConfessions;
+}
+
+export type Confession = string;
 
 export interface ConfessionParagraphEntry {
   chapterTitle: string;
@@ -22,7 +31,7 @@ function entryKey(chapter: number, paragraph: number): string {
 }
 
 export function isConfession(value: string): value is Confession {
-  return (CONFESSIONS as readonly string[]).includes(value.toLowerCase());
+  return runtimeConfessions.includes(value.toLowerCase());
 }
 
 export function normalizeConfession(value: string): Confession | undefined {
@@ -31,23 +40,35 @@ export function normalizeConfession(value: string): Confession | undefined {
 }
 
 export function formatConfessionCodes(): string {
-  return CONFESSIONS.map((confession) => confession.toUpperCase()).join(", ");
+  return runtimeConfessions
+    .map((confession) => confession.toUpperCase())
+    .join(", ");
 }
 
 export class ConfessionLookup {
   private constructor(
-    private readonly documents: Record<Confession, ConfessionDocument>,
-    private readonly paragraphCounts: Record<
-      Confession,
-      Record<number, number>
-    >,
+    private readonly documents: Record<string, ConfessionDocument>,
+    private readonly paragraphCounts: Record<string, Record<number, number>>,
   ) {}
 
-  static async load(dataDir: string): Promise<ConfessionLookup> {
-    const documents = {} as Record<Confession, ConfessionDocument>;
+  static async load(confessionsDir: string): Promise<ConfessionLookup> {
+    const files = await readdir(confessionsDir);
+    const confessionIds = files
+      .filter((fileName) => fileName.endsWith(".json"))
+      .map((fileName) => fileName.slice(0, -".json".length))
+      .sort();
 
-    for (const confession of CONFESSIONS) {
-      const filePath = path.join(dataDir, `${confession}.json`);
+    if (confessionIds.length === 0) {
+      throw new Error(
+        `No confessions found in ${confessionsDir}. Run npm run sync-content first.`,
+      );
+    }
+
+    setRuntimeConfessions(confessionIds);
+
+    const documents: Record<string, ConfessionDocument> = {};
+    for (const confession of confessionIds) {
+      const filePath = path.join(confessionsDir, `${confession}.json`);
       const raw = await readFile(filePath, "utf8");
       documents[confession] = JSON.parse(raw) as ConfessionDocument;
     }
@@ -56,16 +77,15 @@ export class ConfessionLookup {
   }
 
   static fromDocuments(
-    documents: Record<Confession, ConfessionDocument>,
+    documents: Record<string, ConfessionDocument>,
   ): ConfessionLookup {
-    const paragraphCounts = {} as Record<
-      Confession,
-      Record<number, number>
-    >;
+    setRuntimeConfessions(Object.keys(documents));
 
-    for (const confession of CONFESSIONS) {
+    const paragraphCounts: Record<string, Record<number, number>> = {};
+
+    for (const confession of Object.keys(documents)) {
       const counts: Record<number, number> = {};
-      const document = documents[confession];
+      const document = documents[confession]!;
 
       for (const key of Object.keys(document.entries)) {
         const [chapterText, paragraphText] = key.split(":");
@@ -84,8 +104,16 @@ export class ConfessionLookup {
     return new ConfessionLookup(documents, paragraphCounts);
   }
 
+  availableConfessions(): readonly string[] {
+    return getRuntimeConfessions();
+  }
+
   getDocument(confession: Confession): ConfessionDocument {
-    return this.documents[confession];
+    const document = this.documents[confession];
+    if (!document) {
+      throw new Error(`Confession not loaded: ${confession}`);
+    }
+    return document;
   }
 
   getParagraph(
@@ -93,11 +121,11 @@ export class ConfessionLookup {
     chapter: number,
     paragraph: number,
   ): ConfessionParagraphEntry | undefined {
-    return this.documents[confession].entries[entryKey(chapter, paragraph)];
+    return this.documents[confession]?.entries[entryKey(chapter, paragraph)];
   }
 
   getParagraphCount(confession: Confession, chapter: number): number {
-    return this.paragraphCounts[confession][chapter] ?? 0;
+    return this.paragraphCounts[confession]?.[chapter] ?? 0;
   }
 
   expandRange(
@@ -115,12 +143,13 @@ export class ConfessionLookup {
     }
 
     const locations: ConfessionLocation[] = [];
+    const document = this.getDocument(confession);
 
     for (let chapter = startChapter; chapter <= endChapter; chapter += 1) {
       const paragraphCount = this.getParagraphCount(confession, chapter);
       if (paragraphCount === 0) {
         return {
-          error: `Chapter ${chapter} is not in ${this.documents[confession].abbrev}.`,
+          error: `Chapter ${chapter} is not in ${document.abbrev}.`,
         };
       }
 
@@ -130,7 +159,7 @@ export class ConfessionLookup {
 
       if (lastParagraph > paragraphCount) {
         return {
-          error: `Paragraph ${lastParagraph} is beyond chapter ${chapter} in ${this.documents[confession].abbrev}.`,
+          error: `Paragraph ${lastParagraph} is beyond chapter ${chapter} in ${document.abbrev}.`,
         };
       }
 
@@ -141,7 +170,7 @@ export class ConfessionLookup {
       ) {
         if (!this.getParagraph(confession, chapter, paragraph)) {
           return {
-            error: `${this.documents[confession].abbrev} ${chapter}.${paragraph} was not found.`,
+            error: `${document.abbrev} ${chapter}.${paragraph} was not found.`,
           };
         }
 

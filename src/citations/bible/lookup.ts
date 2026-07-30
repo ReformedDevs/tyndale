@@ -1,21 +1,22 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { verseKey, type BookSlug } from "./books.js";
 
-export const TRANSLATIONS = [
-  "web",
-  "asv",
-  "ylt",
-  "kjv",
-  "geneva",
-  "tyndale",
-  "wyc",
-] as const;
-export type Translation = (typeof TRANSLATIONS)[number];
+let runtimeTranslations: readonly string[] = [];
+
+export function setRuntimeTranslations(ids: readonly string[]): void {
+  runtimeTranslations = [...ids].map((id) => id.toLowerCase()).sort();
+}
+
+export function getRuntimeTranslations(): readonly string[] {
+  return runtimeTranslations;
+}
+
+export type Translation = string;
 
 export function isTranslation(value: string): value is Translation {
-  return (TRANSLATIONS as readonly string[]).includes(value.toLowerCase());
+  return runtimeTranslations.includes(value.toLowerCase());
 }
 
 export function normalizeTranslation(value: string): Translation | undefined {
@@ -24,9 +25,9 @@ export function normalizeTranslation(value: string): Translation | undefined {
 }
 
 export function formatTranslationCodes(): string {
-  return TRANSLATIONS.map((translation) => translation.toUpperCase()).join(
-    ", ",
-  );
+  return runtimeTranslations
+    .map((translation) => translation.toUpperCase())
+    .join(", ");
 }
 
 /** YLT is traditionally printed with one verse per line; match that in literary mode. */
@@ -54,18 +55,35 @@ function buildChapterVerseCounts(index: VerseIndex): ChapterVerseCounts {
   return counts;
 }
 
+async function discoverTranslationIds(biblesDir: string): Promise<string[]> {
+  const files = await readdir(biblesDir);
+  return files
+    .filter((fileName) => fileName.endsWith(".json"))
+    .map((fileName) => fileName.slice(0, -".json".length))
+    .sort();
+}
+
 export class VerseLookup {
   private constructor(
-    private readonly indexes: Record<Translation, VerseIndex>,
-    private readonly chapterVerseCounts: Record<Translation, ChapterVerseCounts>,
+    private readonly indexes: Record<string, VerseIndex>,
+    private readonly chapterVerseCounts: Record<string, ChapterVerseCounts>,
   ) {}
 
-  static async load(dataDir: string): Promise<VerseLookup> {
-    const indexes = {} as Record<Translation, VerseIndex>;
-    const chapterVerseCounts = {} as Record<Translation, ChapterVerseCounts>;
+  static async load(biblesDir: string): Promise<VerseLookup> {
+    const translationIds = await discoverTranslationIds(biblesDir);
+    if (translationIds.length === 0) {
+      throw new Error(
+        `No bible translations found in ${biblesDir}. Run npm run sync-content first.`,
+      );
+    }
 
-    for (const translation of TRANSLATIONS) {
-      const filePath = path.join(dataDir, `${translation}.json`);
+    setRuntimeTranslations(translationIds);
+
+    const indexes: Record<string, VerseIndex> = {};
+    const chapterVerseCounts: Record<string, ChapterVerseCounts> = {};
+
+    for (const translation of translationIds) {
+      const filePath = path.join(biblesDir, `${translation}.json`);
       const raw = await readFile(filePath, "utf8");
       indexes[translation] = JSON.parse(raw) as VerseIndex;
       chapterVerseCounts[translation] = buildChapterVerseCounts(
@@ -77,19 +95,24 @@ export class VerseLookup {
   }
 
   static fromIndexes(
-    indexes: Partial<Record<Translation, VerseIndex>>,
+    indexes: Record<string, VerseIndex>,
   ): VerseLookup {
-    const fullIndexes = {} as Record<Translation, VerseIndex>;
-    const chapterVerseCounts = {} as Record<Translation, ChapterVerseCounts>;
+    setRuntimeTranslations(Object.keys(indexes));
+    const chapterVerseCounts: Record<string, ChapterVerseCounts> = {};
 
-    for (const translation of TRANSLATIONS) {
-      fullIndexes[translation] = indexes[translation] ?? {};
-      chapterVerseCounts[translation] = buildChapterVerseCounts(
-        fullIndexes[translation],
-      );
+    for (const translation of Object.keys(indexes)) {
+      const index = indexes[translation];
+      if (!index) {
+        continue;
+      }
+      chapterVerseCounts[translation] = buildChapterVerseCounts(index);
     }
 
-    return new VerseLookup(fullIndexes, chapterVerseCounts);
+    return new VerseLookup(indexes, chapterVerseCounts);
+  }
+
+  availableTranslations(): readonly string[] {
+    return getRuntimeTranslations();
   }
 
   getChapterVerseCount(
@@ -97,7 +120,7 @@ export class VerseLookup {
     book: BookSlug,
     chapter: number,
   ): number | undefined {
-    return this.chapterVerseCounts[translation][`${book}.${chapter}`];
+    return this.chapterVerseCounts[translation]?.[`${book}.${chapter}`];
   }
 
   expandVerses(
@@ -128,7 +151,7 @@ export class VerseLookup {
     chapter: number,
     verse: number,
   ): string | undefined {
-    return this.indexes[translation][verseKey(book, chapter, verse)];
+    return this.indexes[translation]?.[verseKey(book, chapter, verse)];
   }
 
   hasTranslation(translation: string): translation is Translation {

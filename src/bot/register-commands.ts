@@ -1,11 +1,14 @@
 import { REST, Routes, type Client } from "discord.js";
 
 import type { Config } from "../config.js";
-import { SLASH_COMMANDS } from "./commands.js";
+import type { buildSlashCommands } from "./commands.js";
+
+type SlashCommands = ReturnType<typeof buildSlashCommands>;
 
 export async function registerSlashCommands(
   client: Client,
   config: Config,
+  slashCommands: SlashCommands,
 ): Promise<void> {
   const applicationId = client.application?.id;
   if (!applicationId) {
@@ -13,7 +16,7 @@ export async function registerSlashCommands(
   }
 
   const rest = new REST({ version: "10" }).setToken(config.DISCORD_BOT_TOKEN);
-  const body = SLASH_COMMANDS.map((command) => command.toJSON());
+  const body = slashCommands.map((command) => command.toJSON());
 
   if (config.DISCORD_GUILD_ID) {
     await rest.put(

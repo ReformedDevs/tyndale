@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { VerseLookup, isTranslation, normalizeTranslation } from "./lookup.js";
 
@@ -41,7 +41,8 @@ describe("VerseLookup", () => {
 
   it("identifies supported translations", () => {
     expect(lookup.hasTranslation("web")).toBe(true);
-    expect(lookup.hasTranslation("kjv")).toBe(true);
+    expect(lookup.hasTranslation("asv")).toBe(true);
+    expect(lookup.hasTranslation("kjv")).toBe(false);
     expect(lookup.hasTranslation("niv")).toBe(false);
   });
 
@@ -57,12 +58,15 @@ describe("VerseLookup", () => {
 });
 
 describe("isTranslation", () => {
+  beforeAll(() => {
+    VerseLookup.fromIndexes(sampleIndexes);
+  });
+
   it("accepts translation codes case-insensitively", () => {
     expect(isTranslation("WEB")).toBe(true);
     expect(isTranslation("Asv")).toBe(true);
-    expect(isTranslation("kjv")).toBe(true);
     expect(normalizeTranslation("YLT")).toBe("ylt");
-    expect(normalizeTranslation("Geneva")).toBe("geneva");
+    expect(isTranslation("kjv")).toBe(false);
     expect(isTranslation("niv")).toBe(false);
   });
 });

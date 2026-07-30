@@ -1,0 +1,589 @@
+[
+  {
+    "id": "anne-askew",
+    "name": "Anne Askew",
+    "aliases": [
+      "Askew",
+      "Anne Ayscough"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Anne Askew"
+  },
+  {
+    "id": "cotton-mather",
+    "name": "Cotton Mather",
+    "aliases": [
+      "Mather"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Cotton Mather"
+  },
+  {
+    "id": "donald-cargill",
+    "name": "Donald Cargill",
+    "aliases": [
+      "Cargill"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Donald Cargill"
+  },
+  {
+    "id": "heinrich-bullinger",
+    "name": "Heinrich Bullinger",
+    "aliases": [
+      "Bullinger"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Heinrich Bullinger"
+  },
+  {
+    "id": "hugh-latimer",
+    "name": "Hugh Latimer",
+    "aliases": [
+      "Latimer"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:Hugh Latimer"
+  },
+  {
+    "id": "ignatius-of-antioch",
+    "name": "Ignatius of Antioch",
+    "aliases": [
+      "Ignatius",
+      "Saint Ignatius of Antioch",
+      "St. Ignatius of Antioch"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Ignatius of Antioch"
+  },
+  {
+    "id": "james-renwick",
+    "name": "James Renwick",
+    "aliases": [
+      "Renwick"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:James Renwick (Covenanter)"
+  },
+  {
+    "id": "jan-hus",
+    "name": "Jan Hus",
+    "aliases": [
+      "Hus",
+      "John Huss",
+      "Huss"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:Jan Hus"
+  },
+  {
+    "id": "jeremiah-burroughs",
+    "name": "Jeremiah Burroughs",
+    "aliases": [
+      "Burroughs"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Jeremiah Burroughs"
+  },
+  {
+    "id": "jerome-of-prague",
+    "name": "Jerome of Prague",
+    "aliases": [
+      "Jerome of Prague",
+      "Jerome"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:Jerome of Prague"
+  },
+  {
+    "id": "john-bradford",
+    "name": "John Bradford",
+    "aliases": [
+      "Bradford"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:John Bradford"
+  },
+  {
+    "id": "john-bunyan",
+    "name": "John Bunyan",
+    "aliases": [
+      "Bunyan"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Bunyan"
+  },
+  {
+    "id": "john-calvin",
+    "name": "John Calvin",
+    "aliases": [
+      "Calvin"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:John Calvin"
+  },
+  {
+    "id": "john-cotton",
+    "name": "John Cotton",
+    "aliases": [
+      "Cotton"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Cotton (minister)"
+  },
+  {
+    "id": "john-flavel",
+    "name": "John Flavel",
+    "aliases": [
+      "Flavel"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Flavel"
+  },
+  {
+    "id": "john-gill",
+    "name": "John Gill",
+    "aliases": [
+      "Gill"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Gill (theologian)"
+  },
+  {
+    "id": "john-hooper",
+    "name": "John Hooper",
+    "aliases": [
+      "Hooper"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:John Hooper (bishop)"
+  },
+  {
+    "id": "john-knox",
+    "name": "John Knox",
+    "aliases": [
+      "Knox"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:John Knox"
+  },
+  {
+    "id": "john-owen",
+    "name": "John Owen",
+    "aliases": [
+      "Owen"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:John Owen (theologian)"
+  },
+  {
+    "id": "john-rogers",
+    "name": "John Rogers",
+    "aliases": [
+      "Rogers"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:John Rogers (Bible editor and martyr)"
+  },
+  {
+    "id": "john-wycliffe",
+    "name": "John Wycliffe",
+    "aliases": [
+      "Wycliffe",
+      "Wyclif",
+      "John Wyclif"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:John Wycliffe"
+  },
+  {
+    "id": "jonathan-edwards",
+    "name": "Jonathan Edwards",
+    "aliases": [
+      "Edwards"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Jonathan Edwards (theologian)"
+  },
+  {
+    "id": "justin-martyr",
+    "name": "Justin Martyr",
+    "aliases": [
+      "Justin",
+      "Saint Justin Martyr",
+      "St. Justin Martyr"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Justin Martyr"
+  },
+  {
+    "id": "lawrence-saunders",
+    "name": "Lawrence Saunders",
+    "aliases": [
+      "Saunders"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Laurence Saunders"
+  },
+  {
+    "id": "martin-bucer",
+    "name": "Martin Bucer",
+    "aliases": [
+      "Bucer"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Martin Bucer"
+  },
+  {
+    "id": "martin-luther",
+    "name": "Martin Luther",
+    "aliases": [
+      "Luther"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Martin Luther"
+  },
+  {
+    "id": "matthew-henry",
+    "name": "Matthew Henry",
+    "aliases": [
+      "Henry"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Matthew Henry"
+  },
+  {
+    "id": "menno-simons",
+    "name": "Menno Simons",
+    "aliases": [
+      "Menno"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Menno Simons"
+  },
+  {
+    "id": "miles-coverdale",
+    "name": "Myles Coverdale",
+    "aliases": [
+      "Coverdale",
+      "Miles Coverdale"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Myles Coverdale"
+  },
+  {
+    "id": "nicholas-ridley",
+    "name": "Nicholas Ridley",
+    "aliases": [
+      "Ridley"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:Nicholas Ridley (bishop)"
+  },
+  {
+    "id": "perpetua",
+    "name": "Perpetua",
+    "aliases": [
+      "Perpetua and Felicity",
+      "Felicitas and Perpetua",
+      "Sts. Felicitas and Perpetua"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Perpetua and Felicity"
+  },
+  {
+    "id": "peter-martyr-vermigli",
+    "name": "Peter Martyr Vermigli",
+    "aliases": [
+      "Peter Martyr",
+      "Vermigli",
+      "Pietro Martire Vermigli"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Pietro Martire Vermigli"
+  },
+  {
+    "id": "philip-melanchthon",
+    "name": "Philip Melanchthon",
+    "aliases": [
+      "Melanchthon"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Philip Melanchthon"
+  },
+  {
+    "id": "polycarp",
+    "name": "Polycarp",
+    "aliases": [
+      "Saint Polycarp",
+      "St. Polycarp"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Polycarp"
+  },
+  {
+    "id": "richard-baxter",
+    "name": "Richard Baxter",
+    "aliases": [
+      "Baxter"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Richard Baxter"
+  },
+  {
+    "id": "richard-sibbes",
+    "name": "Richard Sibbes",
+    "aliases": [
+      "Sibbes"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Richard Sibbes"
+  },
+  {
+    "id": "rowland-taylor",
+    "name": "Rowland Taylor",
+    "aliases": [
+      "Taylor",
+      "Roland Taylor"
+    ],
+    "categories": [
+      "martyr"
+    ],
+    "source": "wikipedia:Rowland Taylor"
+  },
+  {
+    "id": "samuel-rutherford",
+    "name": "Samuel Rutherford",
+    "aliases": [
+      "Rutherford"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Samuel Rutherford"
+  },
+  {
+    "id": "stephen-charnock",
+    "name": "Stephen Charnock",
+    "aliases": [
+      "Charnock"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Stephen Charnock"
+  },
+  {
+    "id": "theodore-beza",
+    "name": "Theodore Beza",
+    "aliases": [
+      "Beza",
+      "Theodore de Beze"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Theodore Beza"
+  },
+  {
+    "id": "thomas-brooks",
+    "name": "Thomas Brooks",
+    "aliases": [
+      "Brooks"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Brooks (Puritan)"
+  },
+  {
+    "id": "thomas-cranmer",
+    "name": "Thomas Cranmer",
+    "aliases": [
+      "Cranmer"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:Thomas Cranmer"
+  },
+  {
+    "id": "thomas-goodwin",
+    "name": "Thomas Goodwin",
+    "aliases": [
+      "Goodwin"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Goodwin"
+  },
+  {
+    "id": "thomas-hooker",
+    "name": "Thomas Hooker",
+    "aliases": [
+      "Hooker"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Hooker"
+  },
+  {
+    "id": "thomas-manton",
+    "name": "Thomas Manton",
+    "aliases": [
+      "Manton"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Manton (minister)"
+  },
+  {
+    "id": "thomas-watson",
+    "name": "Thomas Watson",
+    "aliases": [
+      "Watson"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:Thomas Watson (Puritan)"
+  },
+  {
+    "id": "ulrich-zwingli",
+    "name": "Ulrich Zwingli",
+    "aliases": [
+      "Zwingli"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:Huldrych Zwingli"
+  },
+  {
+    "id": "william-ames",
+    "name": "William Ames",
+    "aliases": [
+      "Ames"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:William Ames"
+  },
+  {
+    "id": "william-farel",
+    "name": "William Farel",
+    "aliases": [
+      "Farel",
+      "Guillaume Farel"
+    ],
+    "categories": [
+      "reformer"
+    ],
+    "source": "wikipedia:William Farel"
+  },
+  {
+    "id": "william-perkins",
+    "name": "William Perkins",
+    "aliases": [
+      "Perkins"
+    ],
+    "categories": [
+      "puritan"
+    ],
+    "source": "wikipedia:William Perkins (theologian)"
+  },
+  {
+    "id": "william-tyndale",
+    "name": "William Tyndale",
+    "aliases": [
+      "Tyndale",
+      "William Tyndale"
+    ],
+    "categories": [
+      "martyr",
+      "reformer"
+    ],
+    "source": "wikipedia:William Tyndale"
+  }
+]

@@ -1,5 +1,4 @@
 import { readFile } from "node:fs/promises";
-import path from "node:path";
 
 import type { ChurchPeopleIndex, ChurchPersonEntry, PersonCategory } from "./types.js";
 
@@ -31,8 +30,8 @@ function categoryLabel(categories: PersonCategory[]): string {
 export class ChurchPeopleLookup {
   private constructor(private readonly people: ChurchPersonEntry[]) {}
 
-  static async load(dataDir: string): Promise<ChurchPeopleLookup> {
-    const filePath = path.join(dataDir, "church-people.json");
+  static async load(peopleIndexPath: string): Promise<ChurchPeopleLookup> {
+    const filePath = peopleIndexPath;
     const raw = await readFile(filePath, "utf8");
     const index = JSON.parse(raw) as ChurchPeopleIndex;
     return new ChurchPeopleLookup(index.people);

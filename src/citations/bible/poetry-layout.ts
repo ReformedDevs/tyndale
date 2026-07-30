@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { verseKey, type BookSlug } from "./books.js";
-import { TRANSLATIONS, type Translation } from "./lookup.js";
+import { getRuntimeTranslations, type Translation } from "./lookup.js";
 import { cleanUsfmText } from "./usfm-poetry-parser.js";
 
 export interface PoetryLine {
@@ -126,11 +126,11 @@ export class PoetryLayoutLookup {
     private readonly indexes: Partial<Record<Translation, PoetryLayoutIndex>>,
   ) {}
 
-  static async load(dataDir: string): Promise<PoetryLayoutLookup> {
+  static async load(poetryDir: string): Promise<PoetryLayoutLookup> {
     const indexes: Partial<Record<Translation, PoetryLayoutIndex>> = {};
 
-    for (const translation of TRANSLATIONS) {
-      const filePath = path.join(dataDir, `poetry-${translation}.json`);
+    for (const translation of getRuntimeTranslations()) {
+      const filePath = path.join(poetryDir, `${translation}.json`);
       try {
         const raw = await readFile(filePath, "utf8");
         indexes[translation] = JSON.parse(raw) as PoetryLayoutIndex;
@@ -155,6 +155,12 @@ export class PoetryLayoutLookup {
     translation: Translation = "web",
   ): PoetryLayoutLookup {
     return new PoetryLayoutLookup({ [translation]: index });
+  }
+
+  static fromIndexes(
+    indexes: Partial<Record<Translation, PoetryLayoutIndex>>,
+  ): PoetryLayoutLookup {
+    return new PoetryLayoutLookup(indexes);
   }
 
   hasBook(translation: Translation, book: BookSlug): boolean {

@@ -1,0 +1,81 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+import type { ConfessionDocument } from "../../citations/confessions/lookup.js";
+import type { ConfessionRegistryEntry } from "../registry.js";
+import type { ContentPaths } from "../../paths.js";
+
+interface CreedSection {
+  Section: string;
+  Content: string;
+}
+
+interface CreedChapter {
+  Chapter: string;
+  Title: string;
+  Sections: CreedSection[];
+}
+
+interface CreedDocument {
+  Metadata: { Title: string };
+  Data: CreedChapter[];
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
+function buildConfessionDocument(
+  entry: ConfessionRegistryEntry,
+  source: CreedDocument,
+): ConfessionDocument {
+  const entries: ConfessionDocument["entries"] = {};
+
+  for (const chapter of source.Data) {
+    const chapterNumber = Number.parseInt(chapter.Chapter, 10);
+    if (Number.isNaN(chapterNumber)) {
+      throw new Error(`Invalid chapter number in ${entry.id}: ${chapter.Chapter}`);
+    }
+
+    for (const section of chapter.Sections) {
+      const paragraph = Number.parseInt(section.Section, 10);
+      if (Number.isNaN(paragraph)) {
+        throw new Error(
+          `Invalid section number in ${entry.id} chapter ${chapterNumber}: ${section.Section}`,
+        );
+      }
+
+      const key = `${chapterNumber}:${paragraph}`;
+      entries[key] = {
+        chapterTitle: chapter.Title,
+        text: section.Content.trim(),
+      };
+    }
+  }
+
+  return {
+    title: source.Metadata.Title,
+    abbrev: entry.abbrev,
+    entries,
+  };
+}
+
+export async function syncConfession(
+  entry: ConfessionRegistryEntry,
+  paths: ContentPaths,
+): Promise<void> {
+  await mkdir(paths.confessions, { recursive: true });
+
+  console.info(`Fetching ${entry.abbrev}...`);
+  const source = await fetchJson<CreedDocument>(entry.source);
+  const document = buildConfessionDocument(entry, source);
+  const outputPath = path.join(paths.confessions, `${entry.id}.json`);
+  await writeFile(outputPath, `${JSON.stringify(document, null, 2)}\n`, "utf8");
+  console.info(
+    `Wrote confessions/${entry.id}.json (${Object.keys(document.entries).length} paragraphs)`,
+  );
+}

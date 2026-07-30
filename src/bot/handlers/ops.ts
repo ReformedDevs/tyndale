@@ -2,7 +2,7 @@ import type { Client, EmbedBuilder } from "discord.js";
 
 import { createTyndaleEmbed } from "../../citations/bible/format.js";
 import {
-  TRANSLATIONS,
+  getRuntimeTranslations,
   type Translation,
 } from "../../citations/bible/lookup.js";
 import {
@@ -32,7 +32,7 @@ export function formatHelpReply(
   defaultTranslation: Translation,
   defaultTextFormat: TextFormat,
 ): string {
-  const translations = TRANSLATIONS.map((translation) =>
+  const translations = getRuntimeTranslations().map((translation) =>
     translation.toUpperCase(),
   ).join(", ");
   const formats = TEXT_FORMATS.map((format) => formatTextFormatLabel(format)).join(
@@ -315,7 +315,7 @@ export function buildServerFormatResetEmbed(
 }
 
 export function buildServerStatusEmbed(details: ServerStatusDetails): EmbedBuilder {
-  const translations = TRANSLATIONS.map((translation) =>
+  const translations = getRuntimeTranslations().map((translation) =>
     translation.toUpperCase(),
   ).join(", ");
   const effectiveDefault = details.guildTranslation ?? details.botDefault;
@@ -404,7 +404,7 @@ function formatTopBooks(
 
 export function formatStatusReply(client: Client, startedAt: number): string {
   const uptime = formatUptime(Date.now() - startedAt);
-  const translations = TRANSLATIONS.map((translation) =>
+  const translations = getRuntimeTranslations().map((translation) =>
     translation.toUpperCase(),
   ).join(", ");
 

@@ -1,11 +1,8 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { validateSummaryQuality } from "../src/people/wikipedia.js";
-
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const dataPath = path.join(rootDir, "data", "church-people.json");
+import { contentPaths, resolveContentDir } from "../src/paths.js";
 
 interface PersonEntry {
   id: string;
@@ -14,7 +11,8 @@ interface PersonEntry {
   summary: string;
 }
 
-const data = JSON.parse(readFileSync(dataPath, "utf8")) as {
+const paths = contentPaths(resolveContentDir());
+const data = JSON.parse(readFileSync(paths.people, "utf8")) as {
   people: PersonEntry[];
 };
 

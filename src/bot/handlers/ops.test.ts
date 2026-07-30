@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
+import { VerseLookup } from "../../citations/bible/lookup.js";
 import {
   buildHelpEmbed,
   buildServerStatusEmbed,
@@ -9,6 +10,13 @@ import {
 } from "./ops.js";
 
 describe("formatHelpReply", () => {
+  beforeAll(() => {
+    VerseLookup.fromIndexes({
+      web: { "gen.1.1": "In the beginning" },
+      kjv: { "gen.1.1": "In the beginning God created" },
+    });
+  });
+
   it("includes citation examples and bot commands", () => {
     const reply = formatHelpReply("web", "literary");
 
