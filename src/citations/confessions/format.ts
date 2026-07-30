@@ -158,7 +158,11 @@ function groupLocationsByChapter(
     const lastGroup = groups.at(-1);
     const lastLocation = lastGroup?.at(-1);
 
-    if (lastLocation && lastLocation.chapter === location.chapter) {
+    if (
+      lastGroup &&
+      lastLocation &&
+      lastLocation.chapter === location.chapter
+    ) {
       lastGroup.push(location);
     } else {
       groups.push([location]);
