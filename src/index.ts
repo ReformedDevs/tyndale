@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import "dotenv/config";
 
 import { createBotClient } from "./bot/client.js";
+import { registerSlashCommands } from "./bot/register-commands.js";
+import { registerInteractionHandler } from "./bot/handlers/interaction.js";
 import { registerMessageHandler } from "./bot/handlers/message.js";
 import { VerseLookup } from "./citations/bible/lookup.js";
 import { PoetryLayoutLookup } from "./citations/bible/poetry-layout.js";
@@ -36,19 +38,25 @@ async function main(): Promise<void> {
   const startedAt = Date.now();
 
   const client = createBotClient(config);
-  registerMessageHandler(client, {
+  const preferenceDeps = {
     config,
-    lookup,
-    poetryLayout,
     userTranslations,
     guildTranslations,
     userFormats,
     guildFormats,
+  };
+
+  registerMessageHandler(client, {
+    ...preferenceDeps,
+    lookup,
+    poetryLayout,
     guildAnalytics,
     startedAt,
   });
+  registerInteractionHandler(client, preferenceDeps);
 
   await client.login(config.DISCORD_BOT_TOKEN);
+  await registerSlashCommands(client, config);
 }
 
 main().catch((error: unknown) => {

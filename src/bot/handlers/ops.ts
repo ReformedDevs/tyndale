@@ -56,15 +56,16 @@ export function formatHelpReply(
     `*Text formats:* ${formats} (bot default: ${formatTextFormatLabel(defaultTextFormat)})`,
     "",
     "**Bot commands**",
+    "• `/help` — this message",
     "• `[Tyndale help]` — this message",
     "• `[Tyndale status]` — uptime and health",
     "• `[Tyndale server status]` — server defaults",
-    "• `[Tyndale translation]` — your default translation",
-    "• `[Tyndale translation asv]` — set your default",
-    "• `[Tyndale translation reset]` — use server or bot default",
-    "• `[Tyndale server translation]` — this server's default",
-    "• `[Tyndale server translation asv]` — set server default",
-    "• `[Tyndale server translation reset]` — clear server default",
+    "• `/version show` — your default translation",
+    "• `/version set` — set your default translation",
+    "• `/version clear` — use server or bot default",
+    "• `/server version show` — this server's default translation",
+    "• `/server version set` — set server default",
+    "• `/server version clear` — clear server default",
     "• `[Tyndale format]` — your text layout",
     "• `[Tyndale format verse]` — one verse per line",
     "• `[Tyndale format literary]` — USFM poetry lines and prose paragraphs",
@@ -118,7 +119,7 @@ export function buildTranslationShowEmbed(
       [
         "**Tyndale** · translation",
         `You're using this server's default: **${guildTranslation.toUpperCase()}**.`,
-        "Set a personal override with `[Tyndale translation asv]`.",
+        "Set a personal override with `/version set`.",
       ].join("\n"),
     );
   }
@@ -127,7 +128,7 @@ export function buildTranslationShowEmbed(
     [
       "**Tyndale** · translation",
       `You're using the bot default: **${botDefault.toUpperCase()}**.`,
-      "Set yours with `[Tyndale translation asv]`.",
+      "Set yours with `/version set`.",
     ].join("\n"),
   );
 }
@@ -175,7 +176,7 @@ export function buildServerTranslationShowEmbed(
     [
       "**Tyndale** · server translation",
       `This server uses the bot default: **${botDefault.toUpperCase()}**.`,
-      "Set one with `[Tyndale server translation asv]`.",
+      "Set one with `/server version set`.",
     ].join("\n"),
   );
 }
@@ -187,7 +188,7 @@ export function buildServerTranslationSetEmbed(
     [
       "**Tyndale** · server translation",
       `This server's default translation is now **${translation.toUpperCase()}**.`,
-      "Members can still override it with their own `[Tyndale translation ...]` setting.",
+      "Members can still override it with their own `/version set`.",
     ].join("\n"),
   );
 }

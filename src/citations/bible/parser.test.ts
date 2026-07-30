@@ -83,49 +83,14 @@ describe("parseBracketCitation", () => {
     });
   });
 
-  it("parses translation preference commands", () => {
+  it("ignores legacy translation preference brackets", () => {
     expect(parseBracketCitation("[Tyndale translation]")).toEqual({
-      kind: "translation",
+      kind: "ignored",
       raw: "[Tyndale translation]",
-      action: "show",
     });
-    expect(parseBracketCitation("[Tyndale translation asv]")).toEqual({
-      kind: "translation",
-      raw: "[Tyndale translation asv]",
-      action: "set",
-      translation: "asv",
-    });
-    expect(parseBracketCitation("[Tyndale translation reset]")).toEqual({
-      kind: "translation",
-      raw: "[Tyndale translation reset]",
-      action: "reset",
-    });
-  });
-
-  it("parses server translation preference commands", () => {
-    expect(parseBracketCitation("[Tyndale server translation]")).toEqual({
-      kind: "serverTranslation",
-      raw: "[Tyndale server translation]",
-      action: "show",
-    });
-    expect(parseBracketCitation("[Tyndale server translation ylt]")).toEqual({
-      kind: "serverTranslation",
-      raw: "[Tyndale server translation ylt]",
-      action: "set",
-      translation: "ylt",
-    });
-    expect(parseBracketCitation("[Tyndale server translation reset]")).toEqual({
-      kind: "serverTranslation",
-      raw: "[Tyndale server translation reset]",
-      action: "reset",
-    });
-  });
-
-  it("returns an error for unknown translation preferences", () => {
-    const result = parseBracketCitation("[Tyndale translation niv]");
-    expect(result).toMatchObject({
-      kind: "error",
-      message: expect.stringContaining("Unknown translation"),
+    expect(parseBracketCitation("[Tyndale server translation asv]")).toEqual({
+      kind: "ignored",
+      raw: "[Tyndale server translation asv]",
     });
   });
 

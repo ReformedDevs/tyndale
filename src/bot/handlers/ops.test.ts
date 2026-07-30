@@ -15,9 +15,10 @@ describe("formatHelpReply", () => {
     expect(reply).toContain("**Tyndale** · help");
     expect(reply).toContain("`[Gen 1:1]`");
     expect(reply).toContain("`[Ps 150:5-end]`");
+    expect(reply).toContain("`/help`");
     expect(reply).toContain("`[Tyndale help]`");
     expect(reply).toContain("`[Tyndale status]`");
-    expect(reply).toContain("`[Tyndale translation asv]`");
+    expect(reply).toContain("`/version set`");
     expect(reply).toContain("`[Tyndale format verse]`");
     expect(reply).toContain("KJV");
     expect(reply).toContain("(bot default: WEB)");

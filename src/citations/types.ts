@@ -31,20 +31,6 @@ export interface ParsedHelpCitation {
   raw: string;
 }
 
-export interface ParsedTranslationCitation {
-  kind: "translation";
-  raw: string;
-  action: "show" | "set" | "reset";
-  translation?: Translation;
-}
-
-export interface ParsedServerTranslationCitation {
-  kind: "serverTranslation";
-  raw: string;
-  action: "show" | "set" | "reset";
-  translation?: Translation;
-}
-
 export interface ParsedFormatCitation {
   kind: "format";
   raw: string;
@@ -75,8 +61,6 @@ export type ParsedCitation =
   | ParsedStatusCitation
   | ParsedServerStatusCitation
   | ParsedHelpCitation
-  | ParsedTranslationCitation
-  | ParsedServerTranslationCitation
   | ParsedFormatCitation
   | ParsedServerFormatCitation
   | ParsedCitationError

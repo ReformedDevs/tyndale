@@ -1,5 +1,5 @@
 import { BOOKS, type BookSlug } from "./books.js";
-import { normalizeTranslation, formatTranslationCodes, type Translation } from "./lookup.js";
+import { normalizeTranslation, type Translation } from "./lookup.js";
 import { normalizeTextFormat } from "./text-format.js";
 import type {
   ParsedCitation,
@@ -16,9 +16,6 @@ const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
 const SERVER_STATUS_PATTERN = /^tyndale\s+server\s+status$/i;
 const HELP_PATTERN = /^tyndale\s+help$/i;
-const SERVER_TRANSLATION_PATTERN =
-  /^tyndale\s+server\s+translation(?:\s+(\S+))?$/i;
-const TRANSLATION_PATTERN = /^tyndale\s+translation(?:\s+(\S+))?$/i;
 const SERVER_FORMAT_PATTERN = /^tyndale\s+server\s+format(?:\s+(\S+))?$/i;
 const FORMAT_PATTERN = /^tyndale\s+format(?:\s+(\S+))?$/i;
 
@@ -145,62 +142,6 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
 
   if (SERVER_STATUS_PATTERN.test(normalized)) {
     return { kind: "serverStatus", raw };
-  }
-
-  const serverTranslationMatch = SERVER_TRANSLATION_PATTERN.exec(normalized);
-  if (serverTranslationMatch) {
-    const value = serverTranslationMatch[1]?.trim();
-
-    if (!value) {
-      return { kind: "serverTranslation", raw, action: "show" };
-    }
-
-    if (value.toLowerCase() === "reset") {
-      return { kind: "serverTranslation", raw, action: "reset" };
-    }
-
-    const translation = normalizeTranslation(value);
-    if (!translation) {
-      return errorCitation(
-        raw,
-        `Unknown translation "${value}". Use ${formatTranslationCodes()}.`,
-      );
-    }
-
-    return {
-      kind: "serverTranslation",
-      raw,
-      action: "set",
-      translation,
-    };
-  }
-
-  const translationMatch = TRANSLATION_PATTERN.exec(normalized);
-  if (translationMatch) {
-    const value = translationMatch[1]?.trim();
-
-    if (!value) {
-      return { kind: "translation", raw, action: "show" };
-    }
-
-    if (value.toLowerCase() === "reset") {
-      return { kind: "translation", raw, action: "reset" };
-    }
-
-    const translation = normalizeTranslation(value);
-    if (!translation) {
-      return errorCitation(
-        raw,
-        `Unknown translation "${value}". Use ${formatTranslationCodes()}.`,
-      );
-    }
-
-    return {
-      kind: "translation",
-      raw,
-      action: "set",
-      translation,
-    };
   }
 
   const serverFormatMatch = SERVER_FORMAT_PATTERN.exec(normalized);

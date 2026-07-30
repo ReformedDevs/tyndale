@@ -16,10 +16,12 @@ import type {
   ParsedBibleCitation,
   ParsedFormatCitation,
   ParsedServerFormatCitation,
-  ParsedServerTranslationCitation,
-  ParsedTranslationCitation,
 } from "../../citations/types.js";
 import type { Config } from "../../config.js";
+import {
+  resolveDefaultTextFormat,
+  resolveDefaultTranslation,
+} from "../resolve-defaults.js";
 import type { GuildAnalyticsStore } from "../../preferences/guild-analytics.js";
 import type { GuildFormatStore } from "../../preferences/guild-formats.js";
 import type { GuildTranslationStore } from "../../preferences/guild-translations.js";
@@ -34,14 +36,8 @@ import {
   buildServerFormatResetEmbed,
   buildServerFormatSetEmbed,
   buildServerFormatShowEmbed,
-  buildServerTranslationResetEmbed,
-  buildServerTranslationSetEmbed,
-  buildServerTranslationShowEmbed,
   buildServerStatusEmbed,
   buildStatusEmbed,
-  buildTranslationResetEmbed,
-  buildTranslationSetEmbed,
-  buildTranslationShowEmbed,
 } from "./ops.js";
 
 export interface MessageHandlerDeps {
@@ -137,23 +133,6 @@ function getGuildTranslation(
   return deps.guildTranslations.get(message.guild.id);
 }
 
-function resolveDefaultTranslation(
-  message: Message,
-  deps: MessageHandlerDeps,
-): Translation {
-  const userTranslation = deps.userTranslations.get(message.author.id);
-  if (userTranslation) {
-    return userTranslation;
-  }
-
-  const guildTranslation = getGuildTranslation(message, deps);
-  if (guildTranslation) {
-    return guildTranslation;
-  }
-
-  return deps.config.DEFAULT_TRANSLATION;
-}
-
 function getGuildFormat(
   message: Message,
   deps: MessageHandlerDeps,
@@ -163,23 +142,6 @@ function getGuildFormat(
   }
 
   return deps.guildFormats.get(message.guild.id);
-}
-
-function resolveDefaultTextFormat(
-  message: Message,
-  deps: MessageHandlerDeps,
-): TextFormat {
-  const userFormat = deps.userFormats.get(message.author.id);
-  if (userFormat) {
-    return userFormat;
-  }
-
-  const guildFormat = getGuildFormat(message, deps);
-  if (guildFormat) {
-    return guildFormat;
-  }
-
-  return deps.config.DEFAULT_TEXT_FORMAT;
 }
 
 async function resolveMemberLabel(
@@ -222,69 +184,6 @@ async function buildServerStatusEmbedForMessage(
     citationsThisWeek: analytics.citationsThisWeek,
     topBooks: analytics.topBooks,
   });
-}
-
-async function buildTranslationPreferenceEmbed(
-  message: Message,
-  citation: ParsedTranslationCitation,
-  deps: MessageHandlerDeps,
-): Promise<EmbedBuilder> {
-  const userId = message.author.id;
-  const botDefault = deps.config.DEFAULT_TRANSLATION;
-  const guildTranslation = getGuildTranslation(message, deps);
-
-  switch (citation.action) {
-    case "show":
-      return buildTranslationShowEmbed(
-        deps.userTranslations.get(userId),
-        guildTranslation,
-        botDefault,
-      );
-    case "set":
-      await deps.userTranslations.set(
-        userId,
-        citation.translation!,
-        message.guild?.id,
-      );
-      return buildTranslationSetEmbed(citation.translation!);
-    case "reset":
-      await deps.userTranslations.clear(userId);
-      return buildTranslationResetEmbed(guildTranslation, botDefault);
-  }
-}
-
-async function buildServerTranslationPreferenceEmbed(
-  message: Message,
-  citation: ParsedServerTranslationCitation,
-  deps: MessageHandlerDeps,
-): Promise<EmbedBuilder> {
-  const botDefault = deps.config.DEFAULT_TRANSLATION;
-
-  if (!message.guild) {
-    return buildErrorEmbed(
-      "Server translation preferences can only be viewed or changed in a server.",
-    );
-  }
-
-  const guildId = message.guild.id;
-  const guildTranslation = deps.guildTranslations.get(guildId);
-
-  if (citation.action === "show") {
-    return buildServerTranslationShowEmbed(guildTranslation, botDefault);
-  }
-
-  switch (citation.action) {
-    case "set":
-      await deps.guildTranslations.set(
-        guildId,
-        citation.translation!,
-        message.author.id,
-      );
-      return buildServerTranslationSetEmbed(citation.translation!);
-    case "reset":
-      await deps.guildTranslations.clear(guildId);
-      return buildServerTranslationResetEmbed(botDefault);
-  }
 }
 
 async function buildFormatPreferenceEmbed(
@@ -403,8 +302,14 @@ async function handleMessage(
     return;
   }
 
-  const defaultTranslation = resolveDefaultTranslation(message, deps);
-  const defaultTextFormat = resolveDefaultTextFormat(message, deps);
+  const defaultTranslation = resolveDefaultTranslation(
+    { userId: message.author.id, guildId: message.guild?.id ?? null },
+    deps,
+  );
+  const defaultTextFormat = resolveDefaultTextFormat(
+    { userId: message.author.id, guildId: message.guild?.id ?? null },
+    deps,
+  );
   const units: CitationUnit[] = [];
   let pendingBibleCitations: ParsedBibleCitation[] = [];
 
@@ -450,24 +355,6 @@ async function handleMessage(
 
             units.push({
               embeds: [await buildServerStatusEmbedForMessage(message, deps)],
-            });
-            break;
-          case "translation":
-            units.push({
-              embeds: [
-                await buildTranslationPreferenceEmbed(message, citation, deps),
-              ],
-            });
-            break;
-          case "serverTranslation":
-            units.push({
-              embeds: [
-                await buildServerTranslationPreferenceEmbed(
-                  message,
-                  citation,
-                  deps,
-                ),
-              ],
             });
             break;
           case "format":

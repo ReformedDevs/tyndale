@@ -41,8 +41,10 @@ npm run dev
 3. Enable **Message Content Intent** under **Privileged Gateway Intents** (required to read message text).
 4. Turn **Public Bot** on if you want others to add Tyndale via an invite link.
 5. Generate an invite URL under **OAuth2 → URL Generator**:
-   - **Scopes:** `bot`
+   - **Scopes:** `bot`, `applications.commands`
    - **Permissions:** View Channels, Send Messages, Read Message History, Create Public Threads, Send Messages in Threads
+
+Optional: set `DISCORD_GUILD_ID` in `.env` during development to register slash commands to one server instantly (guild commands). Leave it unset for global commands in production.
 
 ## Usage
 
@@ -56,15 +58,11 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Full book name | `[Genesis 1:1]` |
 | Translation prefix | `[ASV Gen 1:1]`, `[KJV John 3:16]`, `[Tyndale Gen 1:1]` |
 | Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
-| Bot help | `[Tyndale help]` |
+| Bot help | `/help`, `[Tyndale help]` |
 | Bot status | `[Tyndale status]` |
 | Server defaults | `[Tyndale server status]` |
-| Your default translation | `[Tyndale translation]` |
-| Set your default translation | `[Tyndale translation asv]` |
-| Reset your default translation | `[Tyndale translation reset]` |
-| Server default translation | `[Tyndale server translation]` |
-| Set server default translation | `[Tyndale server translation asv]` |
-| Reset server default translation | `[Tyndale server translation reset]` |
+| Your default translation | `/version show`, `/version set`, `/version clear` |
+| Server default translation | `/server version show`, `/server version set`, `/server version clear` |
 | Your text layout | `[Tyndale format]` |
 | Set your text layout | `[Tyndale format verse]`, `[Tyndale format literary]`, `[Tyndale format paragraph]` |
 | Reset your text layout | `[Tyndale format reset]` |
