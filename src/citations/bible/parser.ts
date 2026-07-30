@@ -1,6 +1,7 @@
 import { BOOKS, type BookSlug } from "./books.js";
 import { normalizeTranslation, type Translation } from "./lookup.js";
 import { normalizeTextFormat } from "./text-format.js";
+import { parseConfessionBracket } from "../confessions/parser.js";
 import type {
   ParsedCitation,
   ParsedCitationError,
@@ -198,6 +199,11 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
       action: "set",
       format,
     };
+  }
+
+  const confessionCitation = parseConfessionBracket(raw, content);
+  if (confessionCitation) {
+    return confessionCitation;
   }
 
   let translation: Translation | undefined;

@@ -19,6 +19,8 @@ describe("formatHelpReply", () => {
     expect(reply).toContain("`[Tyndale help]`");
     expect(reply).toContain("`[Tyndale status]`");
     expect(reply).toContain("`/version set`");
+    expect(reply).toContain("`[WCF 1.1]`");
+    expect(reply).toContain("`[LBCF 26.2]`");
     expect(reply).toContain("`[Tyndale format verse]`");
     expect(reply).toContain("KJV");
     expect(reply).toContain("(bot default: WEB)");

@@ -1,8 +1,31 @@
 import type { BookSlug } from "./bible/books.js";
 import type { Translation } from "./bible/lookup.js";
 import type { TextFormat } from "./bible/text-format.js";
+import type { Confession } from "./confessions/lookup.js";
 
 export type CitationSource = "bible" | "lbcf" | "wcf";
+
+export interface ConfessionLocation {
+  chapter: number;
+  paragraph: number;
+}
+
+export interface ParsedConfessionCitation {
+  kind: "confession";
+  raw: string;
+  confession: Confession;
+  locations: ConfessionLocation[];
+  /** When set, expands to all paragraphs in this chapter at lookup time. */
+  wholeChapter?: number;
+  /** When set, expands from this paragraph through the chapter end at lookup time. */
+  chapterEndFrom?: ConfessionLocation;
+  range?: {
+    startChapter: number;
+    startParagraph: number;
+    endChapter: number;
+    endParagraph: number;
+  };
+}
 
 export interface ParsedBibleCitation {
   kind: "bible";
@@ -58,6 +81,7 @@ export interface ParsedIgnoredCitation {
 
 export type ParsedCitation =
   | ParsedBibleCitation
+  | ParsedConfessionCitation
   | ParsedStatusCitation
   | ParsedServerStatusCitation
   | ParsedHelpCitation

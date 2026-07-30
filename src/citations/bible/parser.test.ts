@@ -83,6 +83,66 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses confession citations", () => {
+    expect(parseBracketCitation("[WCF 1.1]")).toEqual({
+      kind: "confession",
+      raw: "[WCF 1.1]",
+      confession: "wcf",
+      locations: [{ chapter: 1, paragraph: 1 }],
+    });
+    expect(parseBracketCitation("[LBCF 26.2]")).toEqual({
+      kind: "confession",
+      raw: "[LBCF 26.2]",
+      confession: "lbcf",
+      locations: [{ chapter: 26, paragraph: 2 }],
+    });
+    expect(parseBracketCitation("[WCF 1.1-3]")).toEqual({
+      kind: "confession",
+      raw: "[WCF 1.1-3]",
+      confession: "wcf",
+      locations: [],
+      range: {
+        startChapter: 1,
+        startParagraph: 1,
+        endChapter: 1,
+        endParagraph: 3,
+      },
+    });
+    expect(parseBracketCitation("[LBCF 1.1-2.2]")).toEqual({
+      kind: "confession",
+      raw: "[LBCF 1.1-2.2]",
+      confession: "lbcf",
+      locations: [],
+      range: {
+        startChapter: 1,
+        startParagraph: 1,
+        endChapter: 2,
+        endParagraph: 2,
+      },
+    });
+    expect(parseBracketCitation("[WCF 1]")).toEqual({
+      kind: "confession",
+      raw: "[WCF 1]",
+      confession: "wcf",
+      locations: [],
+      wholeChapter: 1,
+    });
+    expect(parseBracketCitation("[LBCF 26.end]")).toEqual({
+      kind: "confession",
+      raw: "[LBCF 26.end]",
+      confession: "lbcf",
+      locations: [],
+      chapterEndFrom: { chapter: 26, paragraph: 1 },
+    });
+    expect(parseBracketCitation("[WCF 1.2-end]")).toEqual({
+      kind: "confession",
+      raw: "[WCF 1.2-end]",
+      confession: "wcf",
+      locations: [],
+      chapterEndFrom: { chapter: 1, paragraph: 2 },
+    });
+  });
+
   it("ignores legacy translation preference brackets", () => {
     expect(parseBracketCitation("[Tyndale translation]")).toEqual({
       kind: "ignored",

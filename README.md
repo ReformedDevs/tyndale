@@ -58,6 +58,8 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Full book name | `[Genesis 1:1]` |
 | Translation prefix | `[ASV Gen 1:1]`, `[KJV John 3:16]`, `[Tyndale Gen 1:1]` |
 | Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
+| Westminster Confession | `[WCF 1.1]`, `[WCF 1.1-3]`, `[WCF 1]`, `[WCF 1.2-end]` |
+| 1689 London Baptist Confession | `[LBCF 26.2]`, `[LBCF 26.1-4]`, `[LBCF 26]`, `[LBCF 26.end]` |
 | Bot help | `/help`, `[Tyndale help]` |
 | Bot status | `[Tyndale status]` |
 | Server defaults | `[Tyndale server status]` |
@@ -97,6 +99,11 @@ Tyndale uses public-domain Bible texts:
 - **WYC** — Wycliffe Bible (1388), via [scrollmapper/bible_databases](https://github.com/scrollmapper/bible_databases). Apocryphal/deuterocanonical books in the source are omitted.
 
 Literary layout structure (paragraph and poetry markers) is parsed from [ebible.org](https://ebible.org/) USFM for WEB, ASV, YLT, KJV, Geneva, Tyndale (NT), and WYC (modern-spelling edition).
+
+Confession text (public domain):
+
+- **WCF** — Westminster Confession of Faith (1647), via [Creeds.json](https://github.com/NonlinearFruit/Creeds.json)
+- **LBCF** — 1689 London Baptist Confession, via [Creeds.json](https://github.com/NonlinearFruit/Creeds.json)
 
 ## Health checks
 

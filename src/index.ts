@@ -8,6 +8,7 @@ import { registerSlashCommands } from "./bot/register-commands.js";
 import { registerInteractionHandler } from "./bot/handlers/interaction.js";
 import { registerMessageHandler } from "./bot/handlers/message.js";
 import { VerseLookup } from "./citations/bible/lookup.js";
+import { ConfessionLookup } from "./citations/confessions/lookup.js";
 import { PoetryLayoutLookup } from "./citations/bible/poetry-layout.js";
 import { loadConfig } from "./config.js";
 import { GuildAnalyticsStore } from "./preferences/guild-analytics.js";
@@ -27,6 +28,7 @@ const guildAnalyticsPath = path.join(dataDir, "guild-analytics.json");
 async function main(): Promise<void> {
   const config = loadConfig();
   const lookup = await VerseLookup.load(dataDir);
+  const confessionLookup = await ConfessionLookup.load(dataDir);
   const poetryLayout = await PoetryLayoutLookup.load(dataDir);
   const userTranslations = await UserTranslationStore.load(userTranslationsPath);
   const guildTranslations = await GuildTranslationStore.load(
@@ -49,6 +51,7 @@ async function main(): Promise<void> {
   registerMessageHandler(client, {
     ...preferenceDeps,
     lookup,
+    confessionLookup,
     poetryLayout,
     guildAnalytics,
     startedAt,

@@ -9,11 +9,14 @@ import {
 
 import { buildBibleCitationEmbedsForMany } from "../../citations/bible/format.js";
 import { findBracketCitations } from "../../citations/bible/parser.js";
+import { buildConfessionCitationEmbeds } from "../../citations/confessions/format.js";
+import type { ConfessionLookup } from "../../citations/confessions/lookup.js";
 import type { VerseLookup, Translation } from "../../citations/bible/lookup.js";
 import type { PoetryLayoutLookup } from "../../citations/bible/poetry-layout.js";
 import type { TextFormat } from "../../citations/bible/text-format.js";
 import type {
   ParsedBibleCitation,
+  ParsedConfessionCitation,
   ParsedFormatCitation,
   ParsedServerFormatCitation,
 } from "../../citations/types.js";
@@ -43,6 +46,7 @@ import {
 export interface MessageHandlerDeps {
   config: Config;
   lookup: VerseLookup;
+  confessionLookup: ConfessionLookup;
   poetryLayout: PoetryLayoutLookup;
   userTranslations: UserTranslationStore;
   guildTranslations: GuildTranslationStore;
@@ -120,17 +124,6 @@ async function sendCitationUnit(
       await sendEmbedsSequentially(target, remainingEmbeds);
     },
   );
-}
-
-function getGuildTranslation(
-  message: Message,
-  deps: MessageHandlerDeps,
-): Translation | undefined {
-  if (!message.guild) {
-    return undefined;
-  }
-
-  return deps.guildTranslations.get(message.guild.id);
 }
 
 function getGuildFormat(
@@ -279,6 +272,24 @@ async function appendBibleCitationUnit(
   });
 }
 
+function appendConfessionCitationUnit(
+  units: CitationUnit[],
+  citation: ParsedConfessionCitation,
+  confessionLookup: ConfessionLookup,
+): void {
+  const result = buildConfessionCitationEmbeds(citation, confessionLookup);
+
+  if ("error" in result) {
+    units.push({ embeds: [buildErrorEmbed(result.error)] });
+    return;
+  }
+
+  units.push({
+    embeds: result.embeds,
+    threadName: result.threadName,
+  });
+}
+
 export function registerMessageHandler(
   client: Client,
   deps: MessageHandlerDeps,
@@ -331,6 +342,13 @@ async function handleMessage(
         pendingBibleCitations = [];
 
         switch (citation.kind) {
+          case "confession":
+            appendConfessionCitationUnit(
+              units,
+              citation,
+              deps.confessionLookup,
+            );
+            break;
           case "help":
             units.push({
               embeds: [

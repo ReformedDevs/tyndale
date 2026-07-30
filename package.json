@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
-    "build-data": "tsx scripts/build-verse-index.ts && tsx scripts/build-poetry-index.ts",
+    "build-data": "tsx scripts/build-verse-index.ts && tsx scripts/build-poetry-index.ts && tsx scripts/build-confession-index.ts",
     "test": "vitest run"
   },
   "engines": {
