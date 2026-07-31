@@ -3,6 +3,7 @@ import path from "node:path";
 
 import type { DevotionalRegistryEntry } from "../registry.js";
 import type { ContentPaths } from "../../paths.js";
+import { fetchRemoteText, type RemoteFetchResult } from "./remote.js";
 
 interface SourceEntry {
   month: number;
@@ -22,16 +23,14 @@ interface SourceFile {
 export async function syncDevotional(
   entry: DevotionalRegistryEntry,
   paths: ContentPaths,
-): Promise<void> {
+  fetched?: RemoteFetchResult,
+): Promise<string> {
   await mkdir(paths.devotionals, { recursive: true });
 
+  const remote = fetched ?? (await fetchRemoteText(entry.source));
   console.info(`Fetching ${entry.name}...`);
-  const response = await fetch(entry.source);
-  if (!response.ok) {
-    throw new Error(`Failed to download ${entry.name} (${response.status})`);
-  }
 
-  const source = (await response.json()) as SourceFile;
+  const source = JSON.parse(remote.body) as SourceFile;
   const entries: Record<
     string,
     { title: string; reference: string; paragraphs: string[] }
@@ -56,4 +55,6 @@ export async function syncDevotional(
   console.info(
     `Wrote devotionals/${entry.id}.json (${Object.keys(entries).length} entries)`,
   );
+
+  return remote.contentHash;
 }

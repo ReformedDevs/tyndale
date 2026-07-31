@@ -38,6 +38,11 @@ export function usesVersePerLineProse(translation: Translation): boolean {
 export type VerseIndex = Record<string, string>;
 type ChapterVerseCounts = Record<string, number>;
 
+export interface BibleVerseLocation {
+  chapter: number;
+  verse: number;
+}
+
 function buildChapterVerseCounts(index: VerseIndex): ChapterVerseCounts {
   const counts: ChapterVerseCounts = {};
 
@@ -143,6 +148,78 @@ export class VerseLookup {
       { length: lastVerse - chapterEndFrom + 1 },
       (_, index) => chapterEndFrom + index,
     );
+  }
+
+  expandRange(
+    translation: Translation,
+    book: BookSlug,
+    startChapter: number,
+    startVerse: number,
+    endChapter: number,
+    endVerse: number,
+  ): BibleVerseLocation[] | undefined {
+    if (
+      startChapter > endChapter ||
+      (startChapter === endChapter && startVerse > endVerse)
+    ) {
+      return undefined;
+    }
+
+    const locations: BibleVerseLocation[] = [];
+
+    for (let chapter = startChapter; chapter <= endChapter; chapter += 1) {
+      const lastVerse = this.getChapterVerseCount(translation, book, chapter);
+      if (!lastVerse) {
+        return undefined;
+      }
+
+      const firstVerse = chapter === startChapter ? startVerse : 1;
+      const lastInRange = chapter === endChapter ? endVerse : lastVerse;
+
+      if (firstVerse > lastVerse || lastInRange > lastVerse) {
+        return undefined;
+      }
+
+      for (let verse = firstVerse; verse <= lastInRange; verse += 1) {
+        if (!this.getVerse(translation, book, chapter, verse)) {
+          return undefined;
+        }
+
+        locations.push({ chapter, verse });
+      }
+    }
+
+    return locations;
+  }
+
+  expandChapterRange(
+    translation: Translation,
+    book: BookSlug,
+    startChapter: number,
+    endChapter: number,
+  ): BibleVerseLocation[] | undefined {
+    if (startChapter > endChapter) {
+      return undefined;
+    }
+
+    const locations: BibleVerseLocation[] = [];
+
+    for (let chapter = startChapter; chapter <= endChapter; chapter += 1) {
+      const lastVerse = this.getChapterVerseCount(translation, book, chapter);
+      if (!lastVerse) {
+        return undefined;
+      }
+
+      for (let verse = 1; verse <= lastVerse; verse += 1) {
+        if (!this.getVerse(translation, book, chapter, verse)) {
+          return undefined;
+        }
+
+        locations.push({ chapter, verse });
+      }
+    }
+
+    return locations;
   }
 
   getVerse(

@@ -2,8 +2,10 @@ import { access, mkdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
 import {
+  confessionSyncFingerprint,
   entrySyncFingerprint,
   loadContentRegistry,
+  remoteContentFingerprint,
   translationSyncFingerprint,
   type ContentRegistry,
 } from "../registry.js";
@@ -13,12 +15,14 @@ import {
   resolveRegistryDir,
   type ContentPaths,
 } from "../../paths.js";
-import { loadSyncState, saveSyncState, type SyncState } from "./state.js";
+import { loadSyncState, saveSyncState, fingerprintsEqual, type SyncState } from "./state.js";
+import type { SyncFingerprint } from "../registry.js";
 import { syncConfession } from "./confessions.js";
 import { syncDevotional } from "./devotionals.js";
 import { syncPerson } from "./people.js";
 import { syncTranslation } from "./translations.js";
 import { migrateLegacyContent } from "../migrate.js";
+import { fetchRemoteText } from "./remote.js";
 
 export interface SyncContentOptions {
   contentDir?: string;
@@ -65,22 +69,6 @@ async function bootstrapSyncState(
     }
   }
 
-  for (const entry of registry.confessions) {
-    const outputPath = path.join(paths.confessions, `${entry.id}.json`);
-    const fingerprint = entrySyncFingerprint(entry.source);
-    if (!state.confessions[entry.id] && (await fileExists(outputPath))) {
-      markSynced(state, "confessions", entry.id, fingerprint);
-    }
-  }
-
-  for (const entry of registry.devotionals) {
-    const outputPath = path.join(paths.devotionals, `${entry.id}.json`);
-    const fingerprint = entrySyncFingerprint(entry.source);
-    if (!state.devotionals[entry.id] && (await fileExists(outputPath))) {
-      markSynced(state, "devotionals", entry.id, fingerprint);
-    }
-  }
-
   for (const entry of registry.people) {
     const rawPath = path.join(paths.peopleRaw, `${entry.id}.json`);
     const fingerprint = entrySyncFingerprint(entry.source);
@@ -102,7 +90,7 @@ async function shouldSyncTranslation(
 
   const fingerprint = translationSyncFingerprint(entry);
   const previous = state.translations[entry.id];
-  if (!previous || previous.fingerprint !== fingerprint) {
+  if (!previous || !fingerprintsEqual(previous.fingerprint, fingerprint)) {
     return true;
   }
 
@@ -112,7 +100,7 @@ async function shouldSyncTranslation(
 async function shouldSyncEntry(
   category: keyof SyncState,
   entryId: string,
-  fingerprint: string,
+  fingerprint: SyncFingerprint,
   outputPath: string,
   state: SyncState,
   full: boolean,
@@ -122,7 +110,7 @@ async function shouldSyncEntry(
   }
 
   const previous = state[category][entryId];
-  if (!previous || previous.fingerprint !== fingerprint) {
+  if (!previous || !fingerprintsEqual(previous.fingerprint, fingerprint)) {
     return true;
   }
 
@@ -133,7 +121,7 @@ function markSynced(
   state: SyncState,
   category: keyof SyncState,
   entryId: string,
-  fingerprint: string,
+  fingerprint: SyncFingerprint,
 ): void {
   state[category][entryId] = {
     fingerprint,
@@ -165,6 +153,8 @@ export async function syncContent(
   const registryDir = options.registryDir ?? resolveRegistryDir();
   const paths = contentPaths(contentDir);
   const full = options.full ?? false;
+
+  console.info(`Content directory: ${contentDir}`);
 
   await mkdir(contentDir, { recursive: true });
   await mkdir(paths.bibles, { recursive: true });
@@ -201,7 +191,8 @@ export async function syncContent(
 
   for (const entry of registry.confessions) {
     const outputPath = path.join(paths.confessions, `${entry.id}.json`);
-    const fingerprint = entrySyncFingerprint(entry.source);
+    const fetched = await fetchRemoteText(entry.source);
+    const fingerprint = confessionSyncFingerprint(entry, fetched.contentHash);
     if (
       !(await shouldSyncEntry(
         "confessions",
@@ -216,14 +207,15 @@ export async function syncContent(
       continue;
     }
 
-    await syncConfession(entry, paths);
+    await syncConfession(entry, paths, fetched);
     markSynced(state, "confessions", entry.id, fingerprint);
     await saveSyncState(paths.syncState, state);
   }
 
   for (const entry of registry.devotionals) {
     const outputPath = path.join(paths.devotionals, `${entry.id}.json`);
-    const fingerprint = entrySyncFingerprint(entry.source);
+    const fetched = await fetchRemoteText(entry.source);
+    const fingerprint = remoteContentFingerprint(entry.source, fetched.contentHash);
     if (
       !(await shouldSyncEntry(
         "devotionals",
@@ -238,7 +230,7 @@ export async function syncContent(
       continue;
     }
 
-    await syncDevotional(entry, paths);
+    await syncDevotional(entry, paths, fetched);
     markSynced(state, "devotionals", entry.id, fingerprint);
     await saveSyncState(paths.syncState, state);
   }

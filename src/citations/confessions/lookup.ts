@@ -15,19 +15,50 @@ export function getRuntimeConfessions(): readonly string[] {
 
 export type Confession = string;
 
-export interface ConfessionParagraphEntry {
-  chapterTitle: string;
+export interface ConfessionProof {
+  marker: number;
+  references: string[];
+}
+
+export interface ConfessionParagraph {
+  number: number;
   text: string;
+  textWithMarkers?: string;
+  proofs?: ConfessionProof[];
 }
 
-export interface ConfessionDocument {
+export interface ConfessionChapter {
+  number: number;
   title: string;
-  abbrev: string;
-  entries: Record<string, ConfessionParagraphEntry>;
+  paragraphs: ConfessionParagraph[];
 }
 
-function entryKey(chapter: number, paragraph: number): string {
-  return `${chapter}:${paragraph}`;
+export interface ConfessionMeta {
+  id: string;
+  kind: string;
+  abbrev: string;
+  title: string;
+  edition?: string;
+  year?: number;
+  language?: string;
+  license?: string;
+  tradition?: string;
+  authors?: string[];
+}
+
+/** christian-standards confession document shape (stored as-is in content/). */
+export interface ConfessionDocument {
+  meta: ConfessionMeta;
+  chapters: ConfessionChapter[];
+}
+
+export interface ConfessionParagraphEntry {
+  chapter: number;
+  chapterTitle: string;
+  number: number;
+  text: string;
+  textWithMarkers?: string;
+  proofs?: ConfessionProof[];
 }
 
 export function isConfession(value: string): value is Confession {
@@ -43,6 +74,13 @@ export function formatConfessionCodes(): string {
   return runtimeConfessions
     .map((confession) => confession.toUpperCase())
     .join(", ");
+}
+
+export function countConfessionParagraphs(document: ConfessionDocument): number {
+  return document.chapters.reduce(
+    (total, chapter) => total + chapter.paragraphs.length,
+    0,
+  );
 }
 
 export class ConfessionLookup {
@@ -87,15 +125,13 @@ export class ConfessionLookup {
       const counts: Record<number, number> = {};
       const document = documents[confession]!;
 
-      for (const key of Object.keys(document.entries)) {
-        const [chapterText, paragraphText] = key.split(":");
-        const chapter = Number.parseInt(chapterText ?? "", 10);
-        const paragraph = Number.parseInt(paragraphText ?? "", 10);
-        if (Number.isNaN(chapter) || Number.isNaN(paragraph)) {
-          continue;
+      for (const chapter of document.chapters) {
+        for (const paragraph of chapter.paragraphs) {
+          counts[chapter.number] = Math.max(
+            counts[chapter.number] ?? 0,
+            paragraph.number,
+          );
         }
-
-        counts[chapter] = Math.max(counts[chapter] ?? 0, paragraph);
       }
 
       paragraphCounts[confession] = counts;
@@ -116,12 +152,37 @@ export class ConfessionLookup {
     return document;
   }
 
+  getChapter(
+    confession: Confession,
+    chapter: number,
+  ): ConfessionChapter | undefined {
+    return this.documents[confession]?.chapters.find(
+      (entry) => entry.number === chapter,
+    );
+  }
+
   getParagraph(
     confession: Confession,
     chapter: number,
     paragraph: number,
   ): ConfessionParagraphEntry | undefined {
-    return this.documents[confession]?.entries[entryKey(chapter, paragraph)];
+    const chapterEntry = this.getChapter(confession, chapter);
+    if (!chapterEntry) {
+      return undefined;
+    }
+
+    const paragraphEntry = chapterEntry.paragraphs.find(
+      (entry) => entry.number === paragraph,
+    );
+    if (!paragraphEntry) {
+      return undefined;
+    }
+
+    return {
+      chapter: chapterEntry.number,
+      chapterTitle: chapterEntry.title,
+      ...paragraphEntry,
+    };
   }
 
   getParagraphCount(confession: Confession, chapter: number): number {
@@ -149,7 +210,7 @@ export class ConfessionLookup {
       const paragraphCount = this.getParagraphCount(confession, chapter);
       if (paragraphCount === 0) {
         return {
-          error: `Chapter ${chapter} is not in ${document.abbrev}.`,
+          error: `Chapter ${chapter} is not in ${document.meta.abbrev}.`,
         };
       }
 
@@ -159,7 +220,7 @@ export class ConfessionLookup {
 
       if (lastParagraph > paragraphCount) {
         return {
-          error: `Paragraph ${lastParagraph} is beyond chapter ${chapter} in ${document.abbrev}.`,
+          error: `Paragraph ${lastParagraph} is beyond chapter ${chapter} in ${document.meta.abbrev}.`,
         };
       }
 
@@ -170,7 +231,7 @@ export class ConfessionLookup {
       ) {
         if (!this.getParagraph(confession, chapter, paragraph)) {
           return {
-            error: `${document.abbrev} ${chapter}.${paragraph} was not found.`,
+            error: `${document.meta.abbrev} ${chapter}.${paragraph} was not found.`,
           };
         }
 

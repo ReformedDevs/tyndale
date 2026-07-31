@@ -279,8 +279,8 @@ export function buildConfessionCitationEmbeds(
   const parts = buildConfessionParts(
     resolved,
     lookup,
-    document.title,
-    document.abbrev,
+    document.meta.title,
+    document.meta.abbrev,
   );
 
   if ("error" in parts) {
@@ -288,12 +288,12 @@ export function buildConfessionCitationEmbeds(
   }
 
   const label = formatConfessionReferenceLabel(
-    document.abbrev,
+    document.meta.abbrev,
     resolved,
     resolved.locations,
     lookup,
   );
-  const footer = `${label} · ${document.title}`;
+  const footer = `${label} · ${document.meta.title}`;
   const embeds = buildEmbedsFromDescriptionParts(parts);
 
   if (embeds.length > 0) {

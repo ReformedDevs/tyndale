@@ -1,7 +1,11 @@
-import "dotenv/config";
-
-import { readFileSync } from "node:fs";
+import dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+dotenv.config({ path: path.join(repoRoot, ".env") });
+
+const { readFileSync } = await import("node:fs");
 
 import { validateSummaryQuality } from "../src/people/wikipedia.js";
 import { contentPaths, resolveContentDir } from "../src/paths.js";

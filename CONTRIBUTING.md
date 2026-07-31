@@ -75,6 +75,8 @@ Edit [`registry/translations.json`](registry/translations.json):
 
 Deploy syncs one new translation plus its poetry file.
 
+Remote JSON sources (confessions, devotionals) store a SHA-256 hash of the upstream file in `.sync-state.json`, so content edits at the same URL trigger a re-sync automatically.
+
 ## Add a confession
 
 Edit [`registry/confessions.json`](registry/confessions.json):
@@ -84,11 +86,11 @@ Edit [`registry/confessions.json`](registry/confessions.json):
   "id": "wcf",
   "name": "Westminster Confession of Faith",
   "abbrev": "WCF",
-  "source": "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds/westminster_confession_of_faith.json"
+  "source": "https://raw.githubusercontent.com/ReformedDevs/christian-standards/master/confessions/wcf-1646.json"
 }
 ```
 
-Source files use the [Creeds.json](https://github.com/NonlinearFruit/Creeds.json) schema.
+Source files use the [christian-standards](https://github.com/ReformedDevs/christian-standards) confession schema (`meta`, `chapters[]`, `paragraphs[]`, optional `proofs[]`). Sync writes them to `content/confessions/` as-is.
 
 ## Add a devotional
 

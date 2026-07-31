@@ -4,20 +4,42 @@ import { ConfessionLookup, type ConfessionDocument } from "./lookup.js";
 
 const sampleDocuments: Record<"wcf" | "lbcf", ConfessionDocument> = {
   wcf: {
-    title: "Westminster Confession of Faith",
-    abbrev: "WCF",
-    entries: {
-      "1:1": { chapterTitle: "Of the Holy Scripture", text: "One." },
-      "1:2": { chapterTitle: "Of the Holy Scripture", text: "Two." },
-      "2:1": { chapterTitle: "Of God", text: "Three." },
+    meta: {
+      id: "wcf",
+      kind: "confession",
+      abbrev: "WCF",
+      title: "Westminster Confession of Faith",
     },
+    chapters: [
+      {
+        number: 1,
+        title: "Of the Holy Scripture",
+        paragraphs: [
+          { number: 1, text: "One." },
+          { number: 2, text: "Two." },
+        ],
+      },
+      {
+        number: 2,
+        title: "Of God",
+        paragraphs: [{ number: 1, text: "Three." }],
+      },
+    ],
   },
   lbcf: {
-    title: "1689 London Baptist Confession",
-    abbrev: "LBCF",
-    entries: {
-      "26:2": { chapterTitle: "Of the Church", text: "Church." },
+    meta: {
+      id: "lbcf",
+      kind: "confession",
+      abbrev: "LBCF",
+      title: "1689 London Baptist Confession",
     },
+    chapters: [
+      {
+        number: 26,
+        title: "Of the Church",
+        paragraphs: [{ number: 2, text: "Church." }],
+      },
+    ],
   },
 };
 
@@ -34,6 +56,34 @@ describe("ConfessionLookup", () => {
   it("rejects an inverted range", () => {
     expect(lookup.expandRange("wcf", 2, 1, 1, 1)).toEqual({
       error: "Invalid paragraph range.",
+    });
+  });
+
+  it("returns proof metadata when present on a paragraph", () => {
+    const withProofs = ConfessionLookup.fromDocuments({
+      wcf: {
+        ...sampleDocuments.wcf,
+        chapters: [
+          {
+            number: 1,
+            title: "Of the Holy Scripture",
+            paragraphs: [
+              {
+                number: 1,
+                text: "Plain text.",
+                textWithMarkers: "Plain text.[1]",
+                proofs: [{ marker: 1, references: ["Rom.1.19-20"] }],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(withProofs.getParagraph("wcf", 1, 1)).toMatchObject({
+      text: "Plain text.",
+      textWithMarkers: "Plain text.[1]",
+      proofs: [{ marker: 1, references: ["Rom.1.19-20"] }],
     });
   });
 });

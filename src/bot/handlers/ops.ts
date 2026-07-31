@@ -51,6 +51,8 @@ export function formatHelpReply(
     "• `[ASV Gen 1:1]` — translation prefix",
     "• `[Ps 150]` — whole chapter",
     "• `[Ps 150:5-end]` — verses through chapter end",
+    "• `[Gen 1:1-2:3]` — cross-chapter verse range",
+    "• `[Gen 1-2]` — whole chapter range",
     "",
     `*Translations:* ${translations} (bot default: ${defaultTranslation.toUpperCase()})`,
     `*Text formats:* ${formats} (bot default: ${formatTextFormatLabel(defaultTextFormat)})`,

@@ -58,8 +58,8 @@ function pairParagraphs(
   citation: ParsedConfessionDiffCitation,
   lookup: ConfessionLookup,
 ): ParagraphPair[] | { error: string } {
-  const leftAbbrev = lookup.getDocument(leftConfession).abbrev;
-  const rightAbbrev = lookup.getDocument(rightConfession).abbrev;
+  const leftAbbrev = lookup.getDocument(leftConfession).meta.abbrev;
+  const rightAbbrev = lookup.getDocument(rightConfession).meta.abbrev;
 
   const leftLocations = resolveSideLocations(leftConfession, citation, lookup);
   if ("error" in leftLocations) {
@@ -185,8 +185,8 @@ export async function buildConfessionDiffEmbeds(
     return { error: `No paragraphs to compare in ${citation.raw}` };
   }
 
-  const leftAbbrev = lookup.getDocument(citation.left).abbrev;
-  const rightAbbrev = lookup.getDocument(citation.right).abbrev;
+  const leftAbbrev = lookup.getDocument(citation.left).meta.abbrev;
+  const rightAbbrev = lookup.getDocument(citation.right).meta.abbrev;
   const footer = `${leftAbbrev} vs ${rightAbbrev} · same paragraph numbers · topics diverge after ch. 20`;
 
   const files: ConfessionDiffFile[] = [];

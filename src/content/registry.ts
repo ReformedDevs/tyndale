@@ -71,13 +71,60 @@ export function parseWikipediaSource(source: string): string {
   return title;
 }
 
-export function translationSyncFingerprint(entry: TranslationRegistryEntry): string {
-  return JSON.stringify({
-    source: entry.source,
-    poetrySource: entry.poetrySource,
-  });
+export interface TranslationSyncFingerprint {
+  source: string;
+  poetrySource: string;
 }
 
-export function entrySyncFingerprint(source: string): string {
-  return JSON.stringify({ source });
+export interface SourceSyncFingerprint {
+  source: string;
+}
+
+export interface RemoteContentSyncFingerprint {
+  source: string;
+  contentHash: string;
+}
+
+export interface ConfessionSyncFingerprint {
+  source: string;
+  format: "christian-standards-v1";
+  contentHash: string;
+}
+
+export type SyncFingerprint =
+  | TranslationSyncFingerprint
+  | SourceSyncFingerprint
+  | RemoteContentSyncFingerprint
+  | ConfessionSyncFingerprint;
+
+export function translationSyncFingerprint(
+  entry: TranslationRegistryEntry,
+): TranslationSyncFingerprint {
+  return {
+    source: entry.source,
+    poetrySource: entry.poetrySource,
+  };
+}
+
+export function entrySyncFingerprint(source: string): SourceSyncFingerprint {
+  return { source };
+}
+
+export function remoteContentFingerprint(
+  source: string,
+  contentHash: string,
+): RemoteContentSyncFingerprint {
+  return { source, contentHash };
+}
+
+/** Includes content hash so upstream file edits trigger a re-sync. */
+export function confessionSyncFingerprint(
+  entry: ConfessionRegistryEntry,
+  contentHash: string,
+): ConfessionSyncFingerprint {
+  return {
+    source: entry.source,
+    format: "christian-standards-v1",
+    contentHash,
+  };
 }

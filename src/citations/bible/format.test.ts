@@ -99,6 +99,43 @@ describe("resolveBibleCitation", () => {
     expect(result).toBe("_Genesis 1:99 not found in WEB_");
   });
 
+  it("formats cross-chapter ranges with chapter headers", () => {
+    const lookup = VerseLookup.fromIndexes({
+      web: {
+        "gen.1.31": "End of chapter one.",
+        "gen.2.1": "Start of chapter two.",
+        "gen.2.2": "Second verse.",
+      },
+      asv: {},
+      ylt: {},
+    });
+
+    const result = resolveBibleCitation(
+      {
+        kind: "bible",
+        raw: "[Gen 1:31-2:2]",
+        book: "gen",
+        bookName: "Genesis",
+        chapter: 1,
+        verses: [],
+        range: {
+          startChapter: 1,
+          startVerse: 31,
+          endChapter: 2,
+          endVerse: 2,
+        },
+      },
+      lookup,
+      "web",
+      "literary",
+    );
+
+    expect(result).toContain("**31.** End of chapter one.");
+    expect(result).toContain("__**Genesis 2**__");
+    expect(result).toContain("**1.** Start of chapter two.");
+    expect(result).toContain("*Genesis 1:31-2:2 · WEB*");
+  });
+
   it("resolves a whole chapter through lookup", () => {
     const lookup = VerseLookup.fromIndexes({
       web: {

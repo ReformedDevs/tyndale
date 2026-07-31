@@ -55,6 +55,46 @@ describe("VerseLookup", () => {
     expect(lookup.expandVerses("web", "gen", 1, [], 1)).toEqual([1, 2]);
     expect(lookup.expandVerses("web", "gen", 1, [], 2)).toEqual([2]);
   });
+
+  it("expands cross-chapter verse ranges", () => {
+    const crossChapterLookup = VerseLookup.fromIndexes({
+      web: {
+        "gen.1.1": "v1",
+        "gen.1.2": "v2",
+        "gen.2.1": "v3",
+        "gen.2.2": "v4",
+      },
+      asv: {},
+      ylt: {},
+    });
+
+    expect(
+      crossChapterLookup.expandRange("web", "gen", 1, 2, 2, 1),
+    ).toEqual([
+      { chapter: 1, verse: 2 },
+      { chapter: 2, verse: 1 },
+    ]);
+  });
+
+  it("expands whole chapter ranges", () => {
+    const crossChapterLookup = VerseLookup.fromIndexes({
+      web: {
+        "gen.1.1": "a",
+        "gen.1.2": "b",
+        "gen.2.1": "c",
+      },
+      asv: {},
+      ylt: {},
+    });
+
+    expect(
+      crossChapterLookup.expandChapterRange("web", "gen", 1, 2),
+    ).toEqual([
+      { chapter: 1, verse: 1 },
+      { chapter: 1, verse: 2 },
+      { chapter: 2, verse: 1 },
+    ]);
+  });
 });
 
 describe("isTranslation", () => {

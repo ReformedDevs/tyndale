@@ -195,7 +195,7 @@ export function resolveConfessionLocations(
   citation: ParsedConfessionCitation,
   lookup: ConfessionLookup,
 ): ParsedConfessionCitation | { error: string } {
-  const abbrev = lookup.getDocument(citation.confession).abbrev;
+  const abbrev = lookup.getDocument(citation.confession).meta.abbrev;
 
   if (citation.wholeChapter !== undefined) {
     const chapter = citation.wholeChapter;

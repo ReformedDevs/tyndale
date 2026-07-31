@@ -1,7 +1,7 @@
 import { EmbedBuilder } from "discord.js";
 
 import type { ParsedBibleCitation } from "../types.js";
-import type { VerseLookup, Translation } from "./lookup.js";
+import type { VerseLookup, Translation, BibleVerseLocation } from "./lookup.js";
 import { usesVersePerLineProse } from "./lookup.js";
 import { formatUsfmCitationLines, PoetryLayoutLookup } from "./poetry-layout.js";
 import {
@@ -46,6 +46,110 @@ export function formatReferenceLabel(
   return `${bookName} ${chapter}:${sorted.join(",")}`;
 }
 
+export function formatBibleCitationLabel(
+  citation: ParsedBibleCitation,
+  locations: BibleVerseLocation[],
+): string {
+  if (locations.length > 0) {
+    const first = locations[0]!;
+    const last = locations.at(-1)!;
+
+    if (first.chapter === last.chapter) {
+      return formatReferenceLabel(
+        citation.bookName,
+        first.chapter,
+        locations.map((location) => location.verse),
+      );
+    }
+
+    return `${citation.bookName} ${first.chapter}:${first.verse}-${last.chapter}:${last.verse}`;
+  }
+
+  if (citation.chapterRange) {
+    const { startChapter, endChapter } = citation.chapterRange;
+    if (startChapter === endChapter) {
+      return `${citation.bookName} ${startChapter}`;
+    }
+
+    return `${citation.bookName} ${startChapter}-${endChapter}`;
+  }
+
+  if (citation.range) {
+    const { startChapter, startVerse, endChapter, endVerse } = citation.range;
+    if (startChapter === endChapter) {
+      return formatReferenceLabel(citation.bookName, startChapter, [
+        startVerse,
+        ...(endVerse > startVerse
+          ? Array.from(
+              { length: endVerse - startVerse + 1 },
+              (_, index) => startVerse + index,
+            )
+          : []),
+      ]);
+    }
+
+    return `${citation.bookName} ${startChapter}:${startVerse}-${endChapter}:${endVerse}`;
+  }
+
+  if (citation.chapterEndFrom !== undefined && citation.verses.length === 0) {
+    if (citation.chapterEndFrom === 1) {
+      return `${citation.bookName} ${citation.chapter}`;
+    }
+
+    return `${citation.bookName} ${citation.chapter}:${citation.chapterEndFrom}-end`;
+  }
+
+  return formatReferenceLabel(
+    citation.bookName,
+    citation.chapter,
+    citation.verses,
+  );
+}
+
+function resolveVerseLocations(
+  citation: ParsedBibleCitation,
+  lookup: VerseLookup,
+  translation: Translation,
+): BibleVerseLocation[] | undefined {
+  if (citation.chapterRange) {
+    return lookup.expandChapterRange(
+      translation,
+      citation.book,
+      citation.chapterRange.startChapter,
+      citation.chapterRange.endChapter,
+    );
+  }
+
+  if (citation.range) {
+    return lookup.expandRange(
+      translation,
+      citation.book,
+      citation.range.startChapter,
+      citation.range.startVerse,
+      citation.range.endChapter,
+      citation.range.endVerse,
+    );
+  }
+
+  const verses = lookup.expandVerses(
+    translation,
+    citation.book,
+    citation.chapter,
+    citation.verses,
+    citation.chapterEndFrom,
+  );
+
+  if (!verses || verses.length === 0) {
+    return undefined;
+  }
+
+  return verses.map((verse) => ({ chapter: citation.chapter, verse }));
+}
+
+function formatChapterHeader(bookName: string, chapter: number): string {
+  return `__**${bookName} ${chapter}**__`;
+}
+
 export function formatCitationFooter(
   label: string,
   translationLabel: string,
@@ -76,33 +180,19 @@ function resolveBibleCitationContent(
   textFormat: TextFormat,
 ): BibleCitationContent | BibleCitationError {
   const translation = citation.translation ?? defaultTranslation;
-  const verses = lookup.expandVerses(
-    translation,
-    citation.book,
-    citation.chapter,
-    citation.verses,
-    citation.chapterEndFrom,
-  );
+  const locations = resolveVerseLocations(citation, lookup, translation);
 
-  if (!verses || verses.length === 0) {
-    const label = formatReferenceLabel(
-      citation.bookName,
-      citation.chapter,
-      citation.chapterEndFrom !== undefined
-        ? [citation.chapterEndFrom]
-        : citation.verses,
-    );
+  if (!locations || locations.length === 0) {
+    const fallbackLabel = formatBibleCitationLabel(citation, []);
     return {
-      error: `_${label} not found in ${translation.toUpperCase()}_`,
+      error: `_${fallbackLabel} not found in ${translation.toUpperCase()}_`,
     };
   }
 
-  const label = formatReferenceLabel(
-    citation.bookName,
-    citation.chapter,
-    verses,
-  );
+  const label = formatBibleCitationLabel(citation, locations);
   const translationLabel = translation.toUpperCase();
+  const spansMultipleChapters =
+    locations[0]!.chapter !== locations.at(-1)!.chapter;
   const hasUsfmLayout = poetryLayout.hasBook(translation, citation.book);
   const verseLayout = resolveVerseLayout(
     textFormat,
@@ -110,49 +200,83 @@ function resolveBibleCitationContent(
     hasUsfmLayout,
   );
 
-  if (verseLayout === "usfm") {
-    const usfmLines = formatUsfmCitationLines(
-      verses,
-      (verse) =>
-        poetryLayout.getVerse(translation, citation.book, citation.chapter, verse),
-      (verse) =>
-        lookup.getVerse(translation, citation.book, citation.chapter, verse),
-      {
-        proseLayout: usesVersePerLineProse(translation) ? "verse" : "paragraph",
-      },
-    );
+  const verseLines: string[] = [];
+  let currentChapter: number | undefined;
 
-    if (!usfmLines) {
-      return {
-        error: `_${label} not found in ${translationLabel}_`,
-      };
+  const appendChapterLocations = (
+    chapter: number,
+    chapterLocations: BibleVerseLocation[],
+  ): boolean => {
+    if (verseLayout === "usfm") {
+      const verses = chapterLocations.map((location) => location.verse);
+      const usfmLines = formatUsfmCitationLines(
+        verses,
+        (verse) =>
+          poetryLayout.getVerse(translation, citation.book, chapter, verse),
+        (verse) =>
+          lookup.getVerse(translation, citation.book, chapter, verse) ?? "",
+        {
+          proseLayout: usesVersePerLineProse(translation) ? "verse" : "paragraph",
+        },
+      );
+
+      if (!usfmLines) {
+        return false;
+      }
+
+      verseLines.push(...usfmLines);
+      return true;
     }
 
-    return {
-      label,
-      translationLabel,
-      verseLines: usfmLines,
-      verseLayout,
-    };
+    for (const location of chapterLocations) {
+      const text = lookup.getVerse(
+        translation,
+        citation.book,
+        location.chapter,
+        location.verse,
+      );
+
+      if (!text) {
+        return false;
+      }
+
+      verseLines.push(formatVerseLine(location.verse, text));
+    }
+
+    return true;
+  };
+
+  let chapterBatch: BibleVerseLocation[] = [];
+
+  for (const location of locations) {
+    if (spansMultipleChapters && location.chapter !== currentChapter) {
+      if (currentChapter !== undefined) {
+        if (chapterBatch.length > 0) {
+          if (!appendChapterLocations(currentChapter, chapterBatch)) {
+            return {
+              error: `_${label} not found in ${translationLabel}_`,
+            };
+          }
+
+          chapterBatch = [];
+        }
+
+        verseLines.push("");
+        verseLines.push(formatChapterHeader(citation.bookName, location.chapter));
+      }
+
+      currentChapter = location.chapter;
+    }
+
+    chapterBatch.push(location);
   }
 
-  const verseLines: string[] = [];
-
-  for (const verse of verses) {
-    const text = lookup.getVerse(
-      translation,
-      citation.book,
-      citation.chapter,
-      verse,
-    );
-
-    if (!text) {
+  if (chapterBatch.length > 0) {
+    if (!appendChapterLocations(chapterBatch[0]!.chapter, chapterBatch)) {
       return {
         error: `_${label} not found in ${translationLabel}_`,
       };
     }
-
-    verseLines.push(formatVerseLine(verse, text));
   }
 
   return {

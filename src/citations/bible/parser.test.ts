@@ -251,6 +251,54 @@ describe("parseBracketCitation", () => {
     });
   });
 
+  it("parses cross-chapter verse ranges", () => {
+    expect(parseBracketCitation("[Gen 1:1-2:2]")).toMatchObject({
+      kind: "bible",
+      book: "gen",
+      chapter: 1,
+      verses: [],
+      range: {
+        startChapter: 1,
+        startVerse: 1,
+        endChapter: 2,
+        endVerse: 2,
+      },
+    });
+    expect(parseBracketCitation("[1 Cor 13:1-14:1]")).toMatchObject({
+      kind: "bible",
+      book: "1cor",
+      range: {
+        startChapter: 13,
+        startVerse: 1,
+        endChapter: 14,
+        endVerse: 1,
+      },
+    });
+  });
+
+  it("parses whole chapter ranges", () => {
+    expect(parseBracketCitation("[Gen 1-2]")).toMatchObject({
+      kind: "bible",
+      book: "gen",
+      chapter: 1,
+      chapterRange: {
+        startChapter: 1,
+        endChapter: 2,
+      },
+    });
+  });
+
+  it("returns an error for backwards cross-chapter ranges", () => {
+    expect(parseBracketCitation("[Gen 2:1-1:31]")).toMatchObject({
+      kind: "error",
+      message: expect.stringContaining("Invalid verse range"),
+    });
+    expect(parseBracketCitation("[Gen 2-1]")).toMatchObject({
+      kind: "error",
+      message: expect.stringContaining("Invalid chapter range"),
+    });
+  });
+
   it("parses chapter references through end", () => {
     expect(parseBracketCitation("[Ps 150:1-end]")).toMatchObject({
       kind: "bible",
@@ -344,6 +392,16 @@ describe("parseScriptureReference", () => {
       book: "ps",
       chapter: 100,
       verses: [2],
+    });
+    expect(parseScriptureReference("Genesis 1:31-2:1")).toMatchObject({
+      kind: "bible",
+      book: "gen",
+      range: {
+        startChapter: 1,
+        startVerse: 31,
+        endChapter: 2,
+        endVerse: 1,
+      },
     });
   });
 

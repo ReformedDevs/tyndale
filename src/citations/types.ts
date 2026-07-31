@@ -43,6 +43,11 @@ export interface ParsedConfessionCitation {
   };
 }
 
+export interface BibleVerseLocation {
+  chapter: number;
+  verse: number;
+}
+
 export interface ParsedBibleCitation {
   kind: "bible";
   raw: string;
@@ -53,6 +58,18 @@ export interface ParsedBibleCitation {
   verses: number[];
   /** When set, verses are expanded from this number through the chapter end at lookup time. */
   chapterEndFrom?: number;
+  /** When set, expands from start verse through end verse across chapters at lookup time. */
+  range?: {
+    startChapter: number;
+    startVerse: number;
+    endChapter: number;
+    endVerse: number;
+  };
+  /** When set, expands whole chapters from start through end at lookup time. */
+  chapterRange?: {
+    startChapter: number;
+    endChapter: number;
+  };
 }
 
 export interface ParsedStatusCitation {

@@ -86,6 +86,7 @@ Post a bracket citation in any channel the bot can read. Tyndale replies with an
 | Full book name | `[Genesis 1:1]` |
 | Translation prefix | `[ASV Gen 1:1]`, `[KJV John 3:16]`, `[Tyndale Gen 1:1]` |
 | Whole chapter | `[Ps 150]`, `[Ps 150:5-end]` |
+| Cross-chapter range | `[Gen 1:1-2:3]`, `[Gen 1-2]` |
 | Westminster Confession | `[WCF 1.1]`, `[WCF 1.1-3]`, `[WCF 1]`, `[WCF 1.2-end]` |
 | 1689 London Baptist Confession | `[LBCF 26.2]`, `[LBCF 26.1-4]`, `[LBCF 26]`, `[LBCF 26.end]` |
 | Bot help | `/help`, `[Tyndale help]` |
@@ -132,8 +133,8 @@ Literary layout structure (paragraph and poetry markers) is parsed from [ebible.
 
 Confession text (public domain):
 
-- **WCF** — Westminster Confession of Faith (1647), via [Creeds.json](https://github.com/NonlinearFruit/Creeds.json)
-- **LBCF** — 1689 London Baptist Confession, via [Creeds.json](https://github.com/NonlinearFruit/Creeds.json)
+- **WCF** — Westminster Confession of Faith (1646), via [christian-standards](https://github.com/ReformedDevs/christian-standards)
+- **LBCF** — 1689 London Baptist Confession, via [christian-standards](https://github.com/ReformedDevs/christian-standards)
 
 ## Health checks
 

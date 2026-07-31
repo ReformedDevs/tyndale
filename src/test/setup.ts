@@ -13,13 +13,21 @@ VerseLookup.fromIndexes({
 
 ConfessionLookup.fromDocuments({
   wcf: {
-    title: "Westminster Confession of Faith",
-    abbrev: "WCF",
-    entries: {},
+    meta: {
+      id: "wcf",
+      kind: "confession",
+      abbrev: "WCF",
+      title: "Westminster Confession of Faith",
+    },
+    chapters: [],
   },
   lbcf: {
-    title: "1689 London Baptist Confession",
-    abbrev: "LBCF",
-    entries: {},
+    meta: {
+      id: "lbcf",
+      kind: "confession",
+      abbrev: "LBCF",
+      title: "1689 London Baptist Confession",
+    },
+    chapters: [],
   },
 });

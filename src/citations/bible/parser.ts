@@ -10,9 +10,11 @@ import type {
 } from "../types.js";
 
 const BRACKET_PATTERN = /\[([^\]]+)\]/g;
-const CITATION_ATTEMPT_PATTERN = /^(.+?)\s+\d+(?::|$)/;
+const CITATION_ATTEMPT_PATTERN = /^(.+?)\s+\d+(?::|$|-\d+)/;
 const CHAPTER_ONLY_PATTERN = /^(.+?)\s+(\d+)$/;
+const CHAPTER_RANGE_PATTERN = /^(.+?)\s+(\d+)-(\d+)$/;
 const CHAPTER_END_PATTERN = /^(.+?)\s+(\d+):(?:(\d+)-)?end$/i;
+const CROSS_CHAPTER_RANGE_PATTERN = /^(.+?)\s+(\d+):(\d+)-(\d+):(\d+)$/;
 const LOCATION_PATTERN = /^(.+?)\s+(\d+):([\d,\-\s]+)$/;
 const STATUS_PATTERN = /^tyndale\s+status$/i;
 const SERVER_STATUS_PATTERN = /^tyndale\s+server\s+status$/i;
@@ -243,6 +245,37 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     return { ...parsed, chapterEndFrom: 1 };
   }
 
+  const chapterRangeMatch = CHAPTER_RANGE_PATTERN.exec(remainder);
+  if (chapterRangeMatch) {
+    const [, bookPart, startChapterText, endChapterText] = chapterRangeMatch;
+    const parsed = parseBookChapter(
+      raw,
+      bookPart ?? "",
+      startChapterText ?? "",
+      translation,
+    );
+    if (parsed.kind !== "bible") {
+      return parsed;
+    }
+
+    const endChapter = Number.parseInt(endChapterText ?? "", 10);
+    if (Number.isNaN(endChapter)) {
+      return errorCitation(raw, `Invalid citation format in ${raw}`);
+    }
+
+    if (parsed.chapter > endChapter) {
+      return errorCitation(raw, `Invalid chapter range in ${raw}`);
+    }
+
+    return {
+      ...parsed,
+      chapterRange: {
+        startChapter: parsed.chapter,
+        endChapter,
+      },
+    };
+  }
+
   const chapterEndMatch = CHAPTER_END_PATTERN.exec(remainder);
   if (chapterEndMatch) {
     const [, bookPart, chapterText, fromVerseText] = chapterEndMatch;
@@ -264,6 +297,59 @@ function parseBracketContent(raw: string, inner: string): ParsedCitation {
     }
 
     return { ...parsed, chapterEndFrom: fromVerse };
+  }
+
+  const crossChapterRangeMatch = CROSS_CHAPTER_RANGE_PATTERN.exec(remainder);
+  if (crossChapterRangeMatch) {
+    const [
+      ,
+      bookPart,
+      startChapterText,
+      startVerseText,
+      endChapterText,
+      endVerseText,
+    ] = crossChapterRangeMatch;
+    const parsed = parseBookChapter(
+      raw,
+      bookPart ?? "",
+      startChapterText ?? "",
+      translation,
+    );
+    if (parsed.kind !== "bible") {
+      return parsed;
+    }
+
+    const startVerse = Number.parseInt(startVerseText ?? "", 10);
+    const endChapter = Number.parseInt(endChapterText ?? "", 10);
+    const endVerse = Number.parseInt(endVerseText ?? "", 10);
+
+    if (
+      Number.isNaN(startVerse) ||
+      Number.isNaN(endChapter) ||
+      Number.isNaN(endVerse) ||
+      startVerse < 1 ||
+      endVerse < 1
+    ) {
+      return errorCitation(raw, `Invalid citation format in ${raw}`);
+    }
+
+    if (
+      parsed.chapter > endChapter ||
+      (parsed.chapter === endChapter && startVerse > endVerse)
+    ) {
+      return errorCitation(raw, `Invalid verse range in ${raw}`);
+    }
+
+    return {
+      ...parsed,
+      verses: [],
+      range: {
+        startChapter: parsed.chapter,
+        startVerse,
+        endChapter,
+        endVerse,
+      },
+    };
   }
 
   if (!LOCATION_PATTERN.test(remainder)) {
@@ -310,6 +396,52 @@ export function parseScriptureReference(
   reference: string,
 ): ParsedBibleCitation | undefined {
   const trimmed = reference.trim();
+
+  const crossChapterMatch = CROSS_CHAPTER_RANGE_PATTERN.exec(trimmed);
+  if (crossChapterMatch) {
+    const [
+      ,
+      bookPart,
+      startChapterText,
+      startVerseText,
+      endChapterText,
+      endVerseText,
+    ] = crossChapterMatch;
+    const parsed = parseBookChapter(
+      `[${trimmed}]`,
+      bookPart ?? "",
+      startChapterText ?? "",
+    );
+    if (parsed.kind !== "bible") {
+      return undefined;
+    }
+
+    const startVerse = Number.parseInt(startVerseText ?? "", 10);
+    const endChapter = Number.parseInt(endChapterText ?? "", 10);
+    const endVerse = Number.parseInt(endVerseText ?? "", 10);
+
+    if (
+      Number.isNaN(startVerse) ||
+      Number.isNaN(endChapter) ||
+      Number.isNaN(endVerse) ||
+      startVerse < 1 ||
+      endVerse < 1
+    ) {
+      return undefined;
+    }
+
+    return {
+      ...parsed,
+      verses: [],
+      range: {
+        startChapter: parsed.chapter,
+        startVerse,
+        endChapter,
+        endVerse,
+      },
+    };
+  }
+
   const match = LOCATION_PATTERN.exec(trimmed);
   if (!match) {
     return undefined;

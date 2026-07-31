@@ -3,12 +3,12 @@
     "id": "wcf",
     "name": "Westminster Confession of Faith",
     "abbrev": "WCF",
-    "source": "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds/westminster_confession_of_faith.json"
+    "source": "https://raw.githubusercontent.com/ReformedDevs/christian-standards/master/confessions/wcf-1646.json"
   },
   {
     "id": "lbcf",
     "name": "1689 London Baptist Confession",
     "abbrev": "LBCF",
-    "source": "https://raw.githubusercontent.com/NonlinearFruit/Creeds.json/master/creeds/london_baptist_1689.json"
+    "source": "https://raw.githubusercontent.com/ReformedDevs/christian-standards/master/confessions/lbcf-1689.json"
   }
 ]

@@ -5,36 +5,45 @@ import { ConfessionLookup, type ConfessionDocument } from "./lookup.js";
 
 const sampleDocuments: Record<"wcf" | "lbcf", ConfessionDocument> = {
   wcf: {
-    title: "Westminster Confession of Faith",
-    abbrev: "WCF",
-    entries: {
-      "1:1": {
-        chapterTitle: "Of the Holy Scripture",
-        text: "First paragraph.",
-      },
-      "1:2": {
-        chapterTitle: "Of the Holy Scripture",
-        text: "Second paragraph.",
-      },
-      "2:1": {
-        chapterTitle: "Of God",
-        text: "Chapter two paragraph one.",
-      },
-      "2:2": {
-        chapterTitle: "Of God",
-        text: "Chapter two paragraph two.",
-      },
+    meta: {
+      id: "wcf",
+      kind: "confession",
+      abbrev: "WCF",
+      title: "Westminster Confession of Faith",
     },
+    chapters: [
+      {
+        number: 1,
+        title: "Of the Holy Scripture",
+        paragraphs: [
+          { number: 1, text: "First paragraph." },
+          { number: 2, text: "Second paragraph." },
+        ],
+      },
+      {
+        number: 2,
+        title: "Of God",
+        paragraphs: [
+          { number: 1, text: "Chapter two paragraph one." },
+          { number: 2, text: "Chapter two paragraph two." },
+        ],
+      },
+    ],
   },
   lbcf: {
-    title: "1689 London Baptist Confession",
-    abbrev: "LBCF",
-    entries: {
-      "26:2": {
-        chapterTitle: "Of the Church",
-        text: "Church paragraph two.",
-      },
+    meta: {
+      id: "lbcf",
+      kind: "confession",
+      abbrev: "LBCF",
+      title: "1689 London Baptist Confession",
     },
+    chapters: [
+      {
+        number: 26,
+        title: "Of the Church",
+        paragraphs: [{ number: 2, text: "Church paragraph two." }],
+      },
+    ],
   },
 };
 
@@ -170,18 +179,22 @@ describe("buildConfessionCitationEmbeds", () => {
     const longLookup = ConfessionLookup.fromDocuments({
       ...sampleDocuments,
       wcf: {
-        title: "Westminster Confession of Faith",
-        abbrev: "WCF",
-        entries: {
-          "1:1": {
-            chapterTitle: "Of the Holy Scripture",
-            text: "A".repeat(2500),
-          },
-          "1:2": {
-            chapterTitle: "Of the Holy Scripture",
-            text: "B".repeat(2500),
-          },
+        meta: {
+          id: "wcf",
+          kind: "confession",
+          abbrev: "WCF",
+          title: "Westminster Confession of Faith",
         },
+        chapters: [
+          {
+            number: 1,
+            title: "Of the Holy Scripture",
+            paragraphs: [
+              { number: 1, text: "A".repeat(2500) },
+              { number: 2, text: "B".repeat(2500) },
+            ],
+          },
+        ],
       },
     });
 
